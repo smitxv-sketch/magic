@@ -83,13 +83,21 @@ ${activeCube.prompt}
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[400px] bg-surface shadow-2xl border-l border-border-default z-40 flex flex-col transform transition-transform duration-300">
-      <div className="p-4 border-b border-border-default flex items-center justify-between bg-surface-elevated">
-        <h3 className="font-semibold text-lg">🧪 Тестирование</h3>
-        <Button variant="ghost" size="sm" onClick={onClose}>Закрыть</Button>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 transition-opacity" 
+        onClick={onClose}
+      />
+      
+      {/* Panel */}
+      <div className="fixed inset-y-0 right-0 w-[400px] bg-surface shadow-2xl border-l border-border-default z-40 flex flex-col transform transition-transform duration-300 animate-in slide-in-from-right">
+        <div className="p-4 border-b border-border-default flex items-center justify-between bg-surface-elevated">
+          <h3 className="font-semibold text-lg">🧪 Тестирование</h3>
+          <Button variant="ghost" size="sm" onClick={onClose}>Закрыть</Button>
+        </div>
 
-      <div className="p-6 flex-1 overflow-y-auto space-y-6">
+        <div className="p-6 flex-1 overflow-y-auto space-y-6">
         {/* File Upload */}
         <div 
           onClick={() => fileInputRef.current?.click()}
@@ -162,7 +170,8 @@ ${activeCube.prompt}
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };

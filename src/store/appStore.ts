@@ -63,7 +63,7 @@ export interface BooleanCheck {
 
 interface AppState {
   // === РЕЖИМ ПРИЛОЖЕНИЯ ===
-  activeMode: 'studio' | 'player' | 'action-library';
+  activeMode: 'studio' | 'player' | 'action-library' | 'it-hub' | 'cases';
   setActiveMode: (mode: AppState['activeMode']) => void;
 
   // === НАСТРОЙКИ ===
@@ -140,7 +140,7 @@ export const useAppStore = create<AppState>((set) => ({
       { key: '{{previous_approver_comment}}', displayName: 'Комментарий руководителя', exampleValue: 'Согласовано с замечаниями' },
     ],
     rules: [],
-    selectedProvider: 'gemini-flash',
+    selectedProvider: 'gigachat',
     boolean_checks_config: [],
   },
 

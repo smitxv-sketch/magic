@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
-import { Settings, Play, Settings2, Zap } from 'lucide-react';
+import { Settings, Play, Settings2, Zap, Terminal, Briefcase } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { SettingsModal } from './SettingsModal';
 import { StudioWorkspace } from '../Studio/StudioWorkspace';
 import { PlayerWorkspace } from '../Player/PlayerWorkspace';
 import { ActionsView } from '../../views/ActionsView';
+import { ITHubView } from '../../views/ITHubView';
+import { CasesView } from '../../views/CasesView';
 
 export const AppShell = () => {
   const { activeMode, setActiveMode, setSettingsOpen, geminiApiKey } = useAppStore();
@@ -25,6 +27,10 @@ export const AppShell = () => {
         return <PlayerWorkspace />;
       case 'action-library':
         return <ActionsView />;
+      case 'cases':
+        return <CasesView />;
+      case 'it-hub':
+        return <ITHubView />;
       default:
         return <StudioWorkspace />;
     }
@@ -65,15 +71,38 @@ export const AppShell = () => {
             icon={<Zap className="w-4 h-4" />}
             label="Действия"
           />
+          <NavButton
+            active={activeMode === 'cases'}
+            onClick={() => setActiveMode('cases')}
+            icon={<Briefcase className="w-4 h-4" />}
+            label="Кейсы"
+          />
         </nav>
 
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="p-3 text-gray-500 hover:text-[#009845] hover:bg-[#009845]/10 rounded-xl transition-all duration-200 active:scale-95"
-          title="Настройки API"
-        >
-          <Settings className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveMode('it-hub')}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+              activeMode === 'it-hub' 
+                ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200" 
+                : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            )}
+          >
+            <Terminal className="w-4 h-4" />
+            <span>Для ИТ</span>
+          </button>
+
+          <div className="h-8 w-px bg-gray-200 mx-2" />
+
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="p-3 text-gray-500 hover:text-[#009845] hover:bg-[#009845]/10 rounded-xl transition-all duration-200 active:scale-95"
+            title="Настройки API"
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}

@@ -10,6 +10,8 @@ import { Loader2 } from 'lucide-react';
 import { compilePrompt } from '@/utils/promptCompiler';
 import { QRCodeSVG } from 'qrcode.react';
 
+import { ActiveStepInfo } from './ActiveStepInfo';
+
 export const PlayerWorkspace = () => {
   const { 
     currentScenario, 
@@ -99,6 +101,9 @@ export const PlayerWorkspace = () => {
                 ))}
               </div>
             </div>
+
+            {/* Active Step Info Overlay */}
+            <ActiveStepInfo />
           </>
         ) : (
           <div className="text-text-muted">Выберите сценарий для запуска</div>
@@ -116,18 +121,42 @@ export const PlayerWorkspace = () => {
       {/* Completed Screen Overlay */}
       {playerState === 'COMPLETED' && (
         <div className="absolute inset-0 bg-white/90 backdrop-blur-md z-50 flex items-center justify-center animate-in fade-in duration-500">
-          <div className="text-center max-w-md p-8 bg-surface rounded-3xl shadow-modal border border-border-default">
+          <div className="text-center max-w-2xl p-8 bg-surface rounded-3xl shadow-modal border border-border-default relative">
+            <button 
+                onClick={() => setPlayerState('IDLE')}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
             <div className="text-6xl mb-4">✅</div>
             <h2 className="text-3xl font-bold mb-4 text-text-primary">Процесс завершён</h2>
             <p className="text-text-secondary mb-8">
               Документ успешно прошел маршрут согласования.
-              Все проверки выполнены автоматически.
             </p>
             
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8">
-              <div className="text-sm text-green-800 font-medium flex items-center justify-center gap-2">
-                <span className="text-xl">⏱️</span> Сэкономлено времени: ~15 минут
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-left">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div className="text-sm text-green-800 font-medium flex items-center gap-2 mb-2">
+                        <span className="text-xl">⏱️</span> Сэкономлено времени
+                    </div>
+                    <div className="text-2xl font-bold text-green-900">~15 минут</div>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <div className="text-sm text-purple-800 font-medium flex items-center gap-2 mb-2">
+                        <span className="text-xl">🤖</span> AI-агенты
+                    </div>
+                    <div className="text-sm text-purple-900 space-y-1">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                            Проверка реквизитов (GigaChat)
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                            Анализ рисков (GigaChat)
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div className="flex justify-center mb-8">

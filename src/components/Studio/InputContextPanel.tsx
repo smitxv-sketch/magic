@@ -26,10 +26,13 @@ export const InputContextPanel = () => {
   return (
     <div className="h-full flex flex-col gap-6">
       <div>
-        <div className="flex items-center gap-2 mb-4 text-text-primary font-semibold">
+        <div className="flex items-center gap-2 mb-1 text-text-primary font-semibold">
           <Database className="w-4 h-4 text-primary" />
           <h3>Переменные из 1С</h3>
         </div>
+        <p className="text-xs text-text-muted mb-4">
+          Данные, которые автоматически подтягиваются из карточки документа в 1С.
+        </p>
         <div className="flex flex-wrap gap-2">
           {mockPlaceholders.map((p) => (
             <PlaceholderBadge
@@ -42,10 +45,13 @@ export const InputContextPanel = () => {
       </div>
 
       <div>
-        <div className="flex items-center gap-2 mb-4 text-text-primary font-semibold">
+        <div className="flex items-center gap-2 mb-1 text-text-primary font-semibold">
           <FileJson className="w-4 h-4 text-primary" />
           <h3>Артефакты процесса</h3>
         </div>
+        <p className="text-xs text-text-muted mb-4">
+          Результаты работы предыдущих AI-агентов в цепочке (например, извлеченные сущности).
+        </p>
         {activeCube.inputArtifacts && activeCube.inputArtifacts.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {activeCube.inputArtifacts.map((p) => (

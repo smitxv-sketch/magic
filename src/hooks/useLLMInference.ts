@@ -38,27 +38,106 @@ async function callGemini(prompt: string, apiKey: string): Promise<LLMResponse> 
   }
 }
 
+const GIGACHAT_API_URL = '/api/gigachat/chat/completions'; // Proxy or direct if allowed (usually needs backend)
+// For this demo, we will mock GigaChat response since we don't have a backend proxy set up in this environment for GigaChat auth.
+// In a real app, this would call a backend endpoint that handles GigaChat OAuth.
+
+async function callGigaChat(prompt: string): Promise<LLMResponse> {
+  // Mock delay
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Simple heuristic-based mock response based on prompt content
+  const isContract = prompt.includes('договор');
+  const isLetter = prompt.includes('письмо');
+  
+  let mockResponse: LLMResponse;
+
+  if (isContract) {
+    mockResponse = {
+      status: 'success',
+      ai_analysis: {
+        severity_score: 2,
+        findings: [
+          'Сумма договора соответствует лимитам',
+          'Реквизиты контрагента проверены (GigaChat)',
+          'Рисков не обнаружено'
+        ],
+        artifact: 'Согласовано GigaChat'
+      },
+      execution_command: {
+        action_id: 'approve',
+        comment_to_user: 'Договор проверен GigaChat. Замечаний нет.'
+      },
+      time_saved_minutes: 12
+    };
+  } else if (isLetter) {
+    mockResponse = {
+      status: 'success',
+      ai_analysis: {
+        severity_score: 8,
+        findings: [
+          'Найдены грубые ошибки в тоне письма',
+          'Отсутствует обязательное приветствие',
+          'Грамматические ошибки (GigaChat)'
+        ],
+        artifact: 'Требуется доработка'
+      },
+      execution_command: {
+        action_id: 'return_to_author',
+        comment_to_user: 'Письмо слишком грубое. Пожалуйста, перепишите вежливее.'
+      },
+      time_saved_minutes: 5
+    };
+  } else {
+    // Default fallback
+     mockResponse = {
+      status: 'success',
+      ai_analysis: {
+        severity_score: 0,
+        findings: ['Анализ выполнен GigaChat'],
+        artifact: 'OK'
+      },
+      execution_command: {
+        action_id: 'approve',
+        comment_to_user: 'Все отлично.'
+      },
+      time_saved_minutes: 1
+    };
+  }
+
+  return mockResponse;
+}
+
 export function useLLMInference() {
-  const apiKey = useAppStore(s => s.geminiApiKey);
+  const { geminiApiKey, activeCube } = useAppStore();
+  const provider = activeCube.selectedProvider || 'gigachat';
 
   const infer = useCallback(async (prompt: string): Promise<LLMResponse> => {
-    if (!apiKey) throw new Error('API key not set');
-
+    
     const timeout = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('TIMEOUT')), 30000)
     );
 
     try {
-      return await Promise.race([callGemini(prompt, apiKey), timeout]);
+      if (provider === 'gigachat') {
+         return await Promise.race([callGigaChat(prompt), timeout]);
+      } else {
+         if (!geminiApiKey) throw new Error('API key not set for Gemini');
+         return await Promise.race([callGemini(prompt, geminiApiKey), timeout]);
+      }
     } catch (e) {
       // Retry once if not timeout
       if (e instanceof Error && e.message !== 'TIMEOUT') {
         console.warn('LLM call failed, retrying...', e);
-        return await Promise.race([callGemini(prompt, apiKey), timeout]);
+        if (provider === 'gigachat') {
+             return await Promise.race([callGigaChat(prompt), timeout]);
+        } else if (geminiApiKey) {
+             return await Promise.race([callGemini(prompt, geminiApiKey), timeout]);
+        }
       }
       throw e;
     }
-  }, [apiKey]);
+  }, [geminiApiKey, provider]);
 
   return { infer };
 }
