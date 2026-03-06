@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { useScenarioLoader } from '@/hooks/useScenarioLoader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Mail, ArrowRight, Box } from 'lucide-react';
+import { FileText, Mail, ArrowRight, Box, Play } from 'lucide-react';
+import { PlayerWorkspace } from '../Player/PlayerWorkspace';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const StudioScenarioList = () => {
-  const { setActiveCube } = useAppStore();
+  const { setActiveCube, loadScenario, setPlayerOpen } = useAppStore();
+  const { loadScenario: fetchScenario } = useScenarioLoader();
 
   const scenarios = [
     {
@@ -42,8 +46,16 @@ export const StudioScenarioList = () => {
     });
   };
 
+  const handlePlay = async (scenarioId: string) => {
+    const scenario = await fetchScenario(scenarioId);
+    if (scenario) {
+      loadScenario(scenario);
+      setPlayerOpen(true);
+    }
+  };
+
   return (
-    <div className="p-8 max-w-5xl mx-auto h-full overflow-y-auto">
+    <div className="p-8 max-w-5xl mx-auto h-full overflow-y-auto relative">
       <h1 className="text-3xl font-bold mb-2 text-text-primary">Сценарии автоматизации</h1>
       <p className="text-text-secondary mb-8">Выберите Активность для настройки логики и промптов.</p>
 
@@ -51,14 +63,24 @@ export const StudioScenarioList = () => {
         {scenarios.map((scenario) => (
           <div key={scenario.id} className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl shadow-[#009845]/5 overflow-hidden hover:shadow-2xl hover:shadow-[#009845]/10 transition-all duration-300 group/card">
             <div className="bg-gradient-to-r from-white/80 to-white/40 border-b border-white/20 p-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-white rounded-2xl shadow-lg shadow-[#009845]/10 border border-[#009845]/10 text-[#009845]">
-                  {scenario.icon}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white rounded-2xl shadow-lg shadow-[#009845]/10 border border-[#009845]/10 text-[#009845]">
+                    {scenario.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">{scenario.title}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{scenario.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 tracking-tight">{scenario.title}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{scenario.description}</p>
-                </div>
+                
+                <Button 
+                  onClick={() => handlePlay(scenario.id)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Play className="w-4 h-4 mr-2 fill-current" />
+                  Запустить демо
+                </Button>
               </div>
             </div>
             

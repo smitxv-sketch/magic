@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { ScenarioSchema, Scenario } from '../schemas/scenarioConfig';
+import { Scenario } from '../schemas/scenarioConfig';
+import { getScenarioById } from '../data/scenarioRegistry';
 
 export function useScenarioLoader() {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,15 +10,16 @@ export function useScenarioLoader() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/scenarios/${scenarioId}.json`);
-      if (!response.ok) {
-        throw new Error(`Failed to load scenario: ${response.statusText}`);
-      }
-      const data = await response.json();
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Validate with Zod
-      const parsed = ScenarioSchema.parse(data);
-      return parsed;
+      const scenario = getScenarioById(scenarioId);
+      
+      if (!scenario) {
+        throw new Error(`Scenario not found: ${scenarioId}`);
+      }
+      
+      return scenario;
     } catch (err) {
       console.error('Scenario load error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

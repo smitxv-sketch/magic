@@ -92,6 +92,8 @@ interface AppState {
   updateActiveCube: (patch: Partial<AppState['activeCube']>) => void;
 
   // === ПЛЕЕР ===
+  isPlayerOpen: boolean;
+  setPlayerOpen: (open: boolean) => void;
   playerState: PlayerState;
   currentScenario: Scenario | null;
   artifacts: Record<string, string>;
@@ -125,6 +127,7 @@ export const useAppStore = create<AppState>((set) => ({
   activeMode: 'studio',
   geminiApiKey: localStorage.getItem('GEMINI_API_KEY'), // Init from local storage if available
   isSettingsOpen: false,
+  isPlayerOpen: false,
 
   activeCubeId: null,
   activeCube: {
@@ -165,6 +168,7 @@ export const useAppStore = create<AppState>((set) => ({
     set({ geminiApiKey: key });
   },
   setSettingsOpen: (open) => set({ isSettingsOpen: open }),
+  setPlayerOpen: (open) => set({ isPlayerOpen: open }),
 
   setActiveCubeId: (id) => set({ activeCubeId: id }),
   

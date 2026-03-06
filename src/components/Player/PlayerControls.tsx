@@ -4,27 +4,21 @@ import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/utils/cn';
 import * as Select from '@radix-ui/react-select';
+import { scenarios } from '@/data/scenarioRegistry';
 
 interface PlayerControlsProps {
-  scenarios: string[]; // List of scenario IDs
   onScenarioSelect: (id: string) => void;
 }
 
-export const PlayerControls = ({ scenarios, onScenarioSelect }: PlayerControlsProps) => {
+export const PlayerControls = ({ onScenarioSelect }: PlayerControlsProps) => {
   const { playerState, startPlayer, pausePlayer, resetPlayer, currentScenario } = useAppStore();
 
   const isPlaying = playerState === 'ANIMATING' || playerState === 'WAITING_LLM';
   const isPaused = playerState === 'PAUSED';
   const isCompleted = playerState === 'COMPLETED';
 
-  // Map scenario IDs to readable names
-  const SCENARIO_NAMES: Record<string, string> = {
-    'contract_review': 'Согласование договора',
-    'outgoing_letter': 'Исходящее письмо'
-  };
-
   return (
-    <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-200 shadow-sm">
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl text-white px-6 py-3 rounded-full shadow-2xl border border-white/10 flex items-center gap-6 z-50 transition-all duration-300 hover:scale-[1.02]">
       
       {/* Scenario Selector */}
       <div className="flex items-center gap-4">
@@ -33,18 +27,18 @@ export const PlayerControls = ({ scenarios, onScenarioSelect }: PlayerControlsPr
             onValueChange={onScenarioSelect} 
             disabled={isPlaying || isPaused}
         >
-          <Select.Trigger className="inline-flex items-center justify-between rounded-xl px-4 py-2.5 text-sm leading-none h-12 gap-2 bg-gray-50 border border-gray-200 text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-[300px] data-[placeholder]:text-gray-400 outline-none">
+          <Select.Trigger className="inline-flex items-center justify-between rounded-full px-4 py-2 text-sm leading-none h-10 gap-2 bg-white/10 border border-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 w-[240px] data-[placeholder]:text-gray-400 outline-none transition-colors">
             <Select.Value placeholder="Выберите сценарий..." />
             <Select.Icon>
-              <ChevronDown className="h-4 w-4 text-gray-500" />
+              <ChevronDown className="h-4 w-4 text-gray-400" />
             </Select.Icon>
           </Select.Trigger>
           <Select.Portal>
-            <Select.Content className="overflow-hidden bg-white rounded-xl border border-gray-200 shadow-xl z-50 min-w-[300px]">
+            <Select.Content className="overflow-hidden bg-slate-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl z-[60] min-w-[240px] text-white">
               <Select.Viewport className="p-1">
-                {scenarios.map(id => (
-                    <Select.Item key={id} value={id} className="relative flex items-center h-10 px-8 text-sm leading-none text-gray-700 rounded-lg select-none hover:bg-emerald-50 hover:text-emerald-900 data-[highlighted]:bg-emerald-50 data-[highlighted]:text-emerald-900 outline-none cursor-pointer">
-                        <Select.ItemText>{SCENARIO_NAMES[id] || id}</Select.ItemText>
+                {scenarios.map(scenario => (
+                    <Select.Item key={scenario.scenario_id} value={scenario.scenario_id} className="relative flex items-center h-10 px-4 text-sm leading-none text-gray-200 rounded-lg select-none hover:bg-white/10 hover:text-white data-[highlighted]:bg-white/10 data-[highlighted]:text-white outline-none cursor-pointer">
+                        <Select.ItemText>{scenario.scenario_name}</Select.ItemText>
                     </Select.Item>
                 ))}
               </Select.Viewport>
@@ -52,59 +46,56 @@ export const PlayerControls = ({ scenarios, onScenarioSelect }: PlayerControlsPr
           </Select.Portal>
         </Select.Root>
 
+        <div className="h-8 w-px bg-white/10" />
+
         <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={resetPlayer}
             disabled={!currentScenario}
-            className="h-12 w-12 rounded-xl border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            className="h-10 w-10 rounded-full text-gray-400 hover:text-white hover:bg-white/10"
             title="Сбросить"
         >
             <RotateCcw className="w-5 h-5" />
         </Button>
       </div>
 
-      {/* Play/Pause Control - Centered or Prominent */}
-      <div className="flex items-center gap-4">
-        <Button
-            onClick={isPlaying ? pausePlayer : startPlayer}
-            disabled={!currentScenario || isCompleted}
-            className={cn(
-                "h-12 px-8 rounded-xl text-base font-semibold shadow-lg transition-all hover:scale-105 active:scale-95",
-                isPlaying 
-                    ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20" 
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
-            )}
-        >
-            {isPlaying ? (
-                <>
-                    <Pause className="w-5 h-5 mr-2 fill-current" />
-                    Пауза
-                </>
-            ) : (
-                <>
-                    <Play className="w-5 h-5 mr-2 fill-current" />
-                    {isPaused ? "Продолжить" : "Запустить"}
-                </>
-            )}
-        </Button>
-      </div>
+      {/* Play/Pause Control */}
+      <Button
+          onClick={isPlaying ? pausePlayer : startPlayer}
+          disabled={!currentScenario || isCompleted}
+          className={cn(
+              "h-12 px-8 rounded-full text-base font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 border-0",
+              isPlaying 
+                  ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20" 
+                  : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/30"
+          )}
+      >
+          {isPlaying ? (
+              <Pause className="w-5 h-5 fill-current" />
+          ) : (
+              <Play className="w-5 h-5 fill-current ml-1" />
+          )}
+      </Button>
 
       {/* Status Indicator */}
-      <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-100">
-        <div className={cn(
-            "w-2.5 h-2.5 rounded-full animate-pulse",
-            isPlaying ? "bg-emerald-500" : 
-            isPaused ? "bg-amber-500" : 
-            isCompleted ? "bg-blue-500" : "bg-gray-300"
-        )} />
-        <span className="text-xs font-mono font-medium text-gray-500 uppercase tracking-wider">
-            {playerState === 'IDLE' && 'Готов к запуску'}
-            {playerState === 'ANIMATING' && 'Выполнение...'}
+      <div className="flex items-center gap-3 pl-2">
+        <div className="relative">
+            <div className={cn(
+                "w-3 h-3 rounded-full transition-colors duration-500",
+                isPlaying ? "bg-emerald-500 shadow-[0_0_10px_theme(colors.emerald.500)]" : 
+                isPaused ? "bg-amber-500" : 
+                isCompleted ? "bg-blue-500" : "bg-gray-500"
+            )} />
+            {isPlaying && <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75" />}
+        </div>
+        <span className="text-xs font-mono font-medium text-gray-400 uppercase tracking-wider w-[100px]">
+            {playerState === 'IDLE' && 'Готов'}
+            {playerState === 'ANIMATING' && 'Выполнение'}
             {playerState === 'WAITING_LLM' && 'AI думает...'}
-            {playerState === 'PAUSED' && 'На паузе'}
+            {playerState === 'PAUSED' && 'Пауза'}
             {playerState === 'COMPLETED' && 'Завершено'}
-            {playerState === 'LLM_ERROR' && 'Ошибка AI'}
+            {playerState === 'LLM_ERROR' && 'Ошибка'}
         </span>
       </div>
     </div>

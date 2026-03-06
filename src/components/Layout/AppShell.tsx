@@ -1,30 +1,26 @@
 import React, { useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
-import { Settings, Play, Settings2, Zap, Terminal, Briefcase } from 'lucide-react';
+import { Settings, Settings2, Zap, Terminal, Briefcase, Home } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { SettingsModal } from './SettingsModal';
 import { StudioWorkspace } from '../Studio/StudioWorkspace';
-import { PlayerWorkspace } from '../Player/PlayerWorkspace';
 import { ActionsView } from '../../views/ActionsView';
 import { ITHubView } from '../../views/ITHubView';
 import { CasesView } from '../../views/CasesView';
+import { PresentationView } from '../presentation/PresentationView';
+import { PlayerWorkspace } from '../Player/PlayerWorkspace';
+import { AnimatePresence, motion } from 'framer-motion';
+import { PlayCircle } from 'lucide-react';
 
 export const AppShell = () => {
-  const { activeMode, setActiveMode, setSettingsOpen, geminiApiKey } = useAppStore();
-
-  // Auto-open settings if no key
-  useEffect(() => {
-    if (!geminiApiKey) {
-      setSettingsOpen(true);
-    }
-  }, [geminiApiKey, setSettingsOpen]);
+  const { activeMode, setActiveMode, setSettingsOpen, geminiApiKey, isPlayerOpen, setPlayerOpen } = useAppStore();
 
   const renderContent = () => {
     switch (activeMode) {
+      case 'presentation':
+        return <PresentationView />;
       case 'studio':
         return <StudioWorkspace />;
-      case 'player':
-        return <PlayerWorkspace />;
       case 'action-library':
         return <ActionsView />;
       case 'cases':
@@ -32,38 +28,38 @@ export const AppShell = () => {
       case 'it-hub':
         return <ITHubView />;
       default:
-        return <StudioWorkspace />;
+        return <PresentationView />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-background to-slate-200 font-sans text-text-primary flex flex-col">
       {/* Navbar */}
-      <header className="h-20 bg-white/90 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-50 shadow-sm transition-all duration-300">
-        <div className="flex items-center gap-4">
+      <header className="sticky top-4 mx-4 z-50 bg-white/70 backdrop-blur-xl border border-white/40 shadow-sm rounded-2xl h-16 flex items-center justify-between px-6 transition-all duration-300">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActiveMode('presentation' as any)}>
           <img 
             src="https://uralsbyt.ru/local/templates/delement/frontend/assets/images/logo-ues.svg" 
             alt="Уралэнергосбыт" 
-            className="h-12 w-auto"
+            className="h-8 w-auto"
           />
-          <div className="h-10 w-px bg-gray-200 mx-2" />
-          <span className="font-bold text-2xl tracking-tight text-gray-800">
+          <div className="h-6 w-px bg-gray-200 mx-2" />
+          <span className="font-bold text-xl tracking-tight text-gray-800">
             Цифровой штат
           </span>
         </div>
 
-        <nav className="flex items-center gap-2 bg-gray-100/50 p-1.5 rounded-2xl border border-white/20 shadow-inner">
+        <nav className="flex items-center gap-1 bg-gray-100/50 p-1 rounded-2xl border border-white/20 shadow-inner">
+          <NavButton
+            active={activeMode === 'presentation'}
+            onClick={() => setActiveMode('presentation' as any)}
+            icon={<Home className="w-4 h-4" />}
+            label="Главная"
+          />
           <NavButton
             active={activeMode === 'studio'}
             onClick={() => setActiveMode('studio')}
             icon={<Settings2 className="w-4 h-4" />}
             label="Студия"
-          />
-          <NavButton
-            active={activeMode === 'player'}
-            onClick={() => setActiveMode('player')}
-            icon={<Play className="w-4 h-4" />}
-            label="Плеер"
           />
           <NavButton
             active={activeMode === 'action-library'}
@@ -93,6 +89,19 @@ export const AppShell = () => {
             <span>Для ИТ</span>
           </button>
 
+          <button
+            onClick={() => setActiveMode('presentation')}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+              activeMode === 'presentation' 
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" 
+                : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+            )}
+          >
+            <PlayCircle className="w-4 h-4" />
+            <span>Презентация</span>
+          </button>
+
           <div className="h-8 w-px bg-gray-200 mx-2" />
 
           <button
@@ -111,6 +120,21 @@ export const AppShell = () => {
       </main>
 
       <SettingsModal />
+
+      {/* Global Player Modal */}
+      <AnimatePresence>
+        {isPlayerOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-white"
+          >
+            <PlayerWorkspace onClose={() => setPlayerOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

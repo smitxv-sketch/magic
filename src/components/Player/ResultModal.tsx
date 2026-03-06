@@ -39,14 +39,14 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.4, type: "spring", bounce: 0.3 }}
-            className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+            className="relative w-full max-w-md bg-white/85 backdrop-blur-3xl border border-white/60 shadow-2xl rounded-[2rem] overflow-hidden flex flex-col"
           >
             {/* Header Section */}
             <div className={cn(
               "px-8 pt-8 pb-6 text-center relative overflow-hidden",
-              isSuccess ? "bg-emerald-50" : 
-              isWarning ? "bg-amber-50" : 
-              isError ? "bg-red-50" : "bg-gray-50"
+              isSuccess ? "bg-emerald-50/50" : 
+              isWarning ? "bg-amber-50/50" : 
+              isError ? "bg-red-50/50" : "bg-gray-50/50"
             )}>
               {/* Background Pattern */}
               <div className="absolute inset-0 opacity-10" 
@@ -86,8 +86,8 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
               <div className="mb-8">
                  <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Результаты анализа</h3>
-                    <div className={cn(
-                        "text-xs font-bold px-2 py-1 rounded-md",
+                     <div className={cn(
+                        "text-xs font-bold px-3 py-1.5 rounded-lg min-w-[100px] text-center",
                         severity_score === 0 ? "bg-emerald-100 text-emerald-700" :
                         severity_score < 5 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
                     )}>
@@ -111,11 +111,11 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
               </div>
 
               {/* AI Comment Box */}
-              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 mb-6 relative">
-                 <div className="absolute -top-3 left-6 bg-white px-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-6 relative mt-6">
+                 <div className="absolute -top-3 left-6 bg-white px-3 py-0.5 rounded-full border border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider shadow-sm">
                     Комментарий AI
                  </div>
-                 <p className="text-gray-600 italic leading-relaxed">
+                 <p className="text-gray-600 italic leading-relaxed pt-2">
                     "{comment_to_user}"
                  </p>
               </div>

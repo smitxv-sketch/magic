@@ -21,7 +21,7 @@ export const ActiveStepInfo = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 w-full max-w-2xl"
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 w-full max-w-2xl"
       >
         <div className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-xl rounded-2xl p-6 flex items-start gap-5">
           {/* Icon Section */}

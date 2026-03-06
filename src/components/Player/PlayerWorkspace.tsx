@@ -6,13 +6,17 @@ import { ProcessMap } from './ProcessMap';
 import { PlayerControls } from './PlayerControls';
 import { ResultModal } from './ResultModal';
 import { ArtifactBadge } from './ArtifactBadge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { compilePrompt } from '@/utils/promptCompiler';
 import { QRCodeSVG } from 'qrcode.react';
 
 import { ActiveStepInfo } from './ActiveStepInfo';
 
-export const PlayerWorkspace = () => {
+interface PlayerWorkspaceProps {
+  onClose?: () => void;
+}
+
+export const PlayerWorkspace = ({ onClose }: PlayerWorkspaceProps) => {
   const { 
     currentScenario, 
     loadScenario, 
@@ -30,7 +34,7 @@ export const PlayerWorkspace = () => {
   // Initialize Engine
   usePlayerEngine();
 
-  // Load default scenario on mount
+  // Load default scenario on mount if none selected
   useEffect(() => {
     if (!currentScenario) {
       handleScenarioSelect('contract_review');
@@ -71,31 +75,34 @@ export const PlayerWorkspace = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background relative overflow-hidden">
-      {/* Top Controls */}
-      <div className="p-6 pb-0 z-20">
-        <PlayerControls 
-          scenarios={['contract_review', 'outgoing_letter']} 
-          onScenarioSelect={handleScenarioSelect} 
-        />
-      </div>
+    <div className="flex flex-col h-full bg-slate-50/50 backdrop-blur-3xl relative overflow-hidden">
+      {/* Close Button (if onClose provided) */}
+      {onClose && (
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/80 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-slate-900 shadow-lg border border-white/50 transition-all hover:scale-110 active:scale-95"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Main Stage */}
-      <div className="flex-1 relative flex flex-col items-center justify-center">
+      <div className="flex-1 relative flex flex-col items-center overflow-y-auto pb-48 pt-12">
         {currentScenario ? (
           <>
-            <div className="w-full max-w-5xl">
-              <div className="text-center mb-12">
-                <h1 className="text-3xl font-bold text-text-primary mb-2">{currentScenario.scenario_name}</h1>
-                <div className="text-text-secondary flex items-center justify-center gap-2">
-                  <span>📄 {currentScenario.document_mock.file_name}</span>
+            <div className="w-full max-w-7xl px-8">
+              <div className="text-center mb-16">
+                <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">{currentScenario.scenario_name}</h1>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/50 border border-slate-200 text-slate-600 text-sm font-medium">
+                  <span>📄</span>
+                  <span>{currentScenario.document_mock.file_name}</span>
                 </div>
               </div>
               
               <ProcessMap scenario={currentScenario} />
               
               {/* Artifacts Display */}
-              <div className="mt-16 flex justify-center gap-4 flex-wrap px-4">
+              <div className="mt-20 flex justify-center gap-4 flex-wrap px-4">
                 {Object.keys(artifacts).map(key => (
                   <ArtifactBadge key={key} artifactKey={key} label={key} />
                 ))}
@@ -106,9 +113,14 @@ export const PlayerWorkspace = () => {
             <ActiveStepInfo />
           </>
         ) : (
-          <div className="text-text-muted">Выберите сценарий для запуска</div>
+          <div className="text-slate-400 mt-20 text-lg font-medium">Выберите сценарий для запуска</div>
         )}
       </div>
+
+      {/* Floating Controls */}
+      <PlayerControls 
+        onScenarioSelect={handleScenarioSelect} 
+      />
 
       {/* Modals */}
       <ResultModal 
@@ -126,7 +138,7 @@ export const PlayerWorkspace = () => {
                 onClick={() => setPlayerState('IDLE')}
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <X className="w-6 h-6" />
             </button>
 
             <div className="text-6xl mb-4">✅</div>
