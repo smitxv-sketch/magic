@@ -66,10 +66,13 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
                 </div>
                 
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                  {isSuccess ? 'Проверка пройдена' : 
-                   isWarning ? 'Требуется внимание' : 
-                   isError ? 'Отклонено' : 'Результат'}
+                  Отчет о проверке
                 </h2>
+                <div className="text-sm font-medium text-gray-500 mb-2">
+                   {isSuccess ? 'Статус: Проверка пройдена' : 
+                    isWarning ? 'Статус: Требуется внимание' : 
+                    isError ? 'Статус: Отклонено' : ''}
+                </div>
                 
                 {result.time_saved_minutes && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/60 backdrop-blur text-xs font-medium text-gray-600 mt-2">
@@ -85,13 +88,13 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
               {/* Findings List */}
               <div className="mb-8">
                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Результаты анализа</h3>
+                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Результаты анализа</h3>
                      <div className={cn(
                         "text-xs font-bold px-3 py-1.5 rounded-lg min-w-[100px] text-center",
                         severity_score === 0 ? "bg-emerald-100 text-emerald-700" :
                         severity_score < 5 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
                     )}>
-                        SCORE: {severity_score}/10
+                        СКОРИНГ: {severity_score}/10
                     </div>
                  </div>
                  
@@ -113,16 +116,11 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
               {/* AI Comment Box */}
               <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-6 relative mt-6">
                  <div className="absolute -top-3 left-6 bg-white px-3 py-0.5 rounded-full border border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider shadow-sm">
-                    Комментарий AI
+                    Комментарий ИИ
                  </div>
                  <p className="text-gray-600 italic leading-relaxed pt-2">
                     "{comment_to_user}"
                  </p>
-              </div>
-
-              {/* Mirror Mode Toggle (Subtle) */}
-              <div className="mb-6">
-                <MirrorModePanel prompt={promptUsed} />
               </div>
 
               {/* Action Button */}

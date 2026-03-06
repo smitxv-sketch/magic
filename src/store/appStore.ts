@@ -124,7 +124,7 @@ interface AppState {
 // === STORE ===
 export const useAppStore = create<AppState>((set) => ({
   // Defaults
-  activeMode: 'studio',
+  activeMode: 'presentation',
   geminiApiKey: localStorage.getItem('GEMINI_API_KEY'), // Init from local storage if available
   isSettingsOpen: false,
   isPlayerOpen: false,

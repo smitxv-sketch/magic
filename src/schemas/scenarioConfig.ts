@@ -19,9 +19,13 @@ const AINodeSchema = z.object({
   output_artifact_key: z.string().optional(),       // ключ под которым сохранить artifact из ответа
   placeholders: z.record(z.string()).optional(),    // { "Сумма_договора": "1 500 000" }
   boolean_checks_config: z.array(z.object({
-    key: z.string(),
-    label: z.string(),
-    expected_in_doc: z.boolean(),
+    key: z.string().optional(),
+    label: z.string().optional(),
+    expected_in_doc: z.boolean().optional(),
+    // Mock result fields
+    check_name: z.string().optional(),
+    is_passed: z.boolean().optional(),
+    result_text: z.string().optional(),
   })).optional(),
 });
 

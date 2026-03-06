@@ -11,9 +11,11 @@ export default {
         'background':       '#EEF2F7',
 
         // Бренд
-        'primary':          '#1A56DB',
-        'primary-dark':     '#1E3A5F',
-        'primary-light':    '#EBF4FF',
+        'primary':          '#10B981', // emerald-500
+        'primary-dark':     '#047857', // emerald-700
+        'primary-light':    '#D1FAE5', // emerald-100
+        'accent':           '#F59E0B', // amber-500
+        'accent-light':     '#FEF3C7', // amber-100
 
         // Текст
         'text-primary':     '#1A202C',
@@ -41,6 +43,16 @@ export default {
         'ai-node-bg':       '#EBF4FF',
         'ai-node-border':   '#1A56DB',
         'ai-node-glow':     '#93C5FD',
+
+        // UES Corporate Palette (Patch 2)
+        ues: {
+          emerald: '#10b981', // Основной цвет успеха, процессов и AI (Изумрудный)
+          emeraldDark: '#047857',
+          amber: '#f59e0b',   // Цвет рисков, заторов и ошибок (Янтарный)
+          amberDark: '#b45309',
+          bg: '#0f172a',      // Глубокий темный фон (Slate 900)
+          panel: '#1e293b',   // Фон карточек (Slate 800)
+        }
       },
       backdropBlur: {
         'xs': '2px',

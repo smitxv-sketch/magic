@@ -7,43 +7,61 @@ import { FileText, Mail, ArrowRight, Box, Play } from 'lucide-react';
 import { PlayerWorkspace } from '../Player/PlayerWorkspace';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { STUDIO_SCENARIOS_DATA } from '@/data/studio_scenarios';
+
 export const StudioScenarioList = () => {
   const { setActiveCube, loadScenario, setPlayerOpen } = useAppStore();
   const { loadScenario: fetchScenario } = useScenarioLoader();
 
   const scenarios = [
     {
-      id: 'contract_review',
-      title: 'Согласование договора',
-      description: 'Проверка орфографии, юридических рисков и финансовых лимитов.',
-      icon: <FileText className="w-6 h-6 text-blue-500" />,
+      id: 'incoming_letter',
+      title: 'Маршрутизация входящих (УД)',
+      description: 'Автоматическая классификация, извлечение фактов и маршрутизация писем.',
+      icon: <Mail className="w-6 h-6 text-purple-500" />,
       nodes: [
-        { id: 'ai_node_1', title: 'AI: Орфография и Реквизиты', type: 'ai' },
-        { id: 'ai_node_2', title: 'AI: Юридические риски', type: 'ai' },
-        { id: 'ai_node_3', title: 'AI: Фин. контроль', type: 'ai' },
+        { id: 'ai_node_1', title: 'AI: Извлечение фактов', type: 'ai' },
+        { id: 'ai_node_2', title: 'AI: Маршрутизатор', type: 'ai' },
       ]
     },
     {
-      id: 'outgoing_letter',
-      title: 'Исходящее письмо',
-      description: 'Проверка реквизитов и тональности ответа регулятору.',
-      icon: <Mail className="w-6 h-6 text-purple-500" />,
+      id: 'contract_review',
+      title: 'Финансовый Firewall',
+      description: 'Проверка математики, налоговых оговорок и валютных рисков.',
+      icon: <FileText className="w-6 h-6 text-blue-500" />,
       nodes: [
-        { id: 'ai_node_letter_1', title: 'AI: Нормоконтроль', type: 'ai' },
-        { id: 'ai_node_letter_2', title: 'AI: Тональность', type: 'ai' },
+        { id: 'ai_node_3', title: 'AI: Проверка математики', type: 'ai' },
+        { id: 'ai_node_4', title: 'AI: Радар рисков', type: 'ai' },
       ]
     }
   ];
 
-  const handleNodeClick = (scenarioTitle: string, nodeTitle: string) => {
-    // In a real app, we would load the specific node config here.
-    // For now, we simulate opening the editor with some context.
-    setActiveCube({
-      id: 'demo_node',
-      title: nodeTitle,
-      prompt: '', // Would load from backend
-      scenarioName: scenarioTitle
-    });
+  const handleNodeClick = (scenarioTitle: string, nodeId: string) => {
+    const realConfig = STUDIO_SCENARIOS_DATA[nodeId];
+    
+    if (realConfig) {
+      setActiveCube({
+        id: realConfig.id,
+        title: realConfig.title,
+        scenarioName: realConfig.scenarioName,
+        prompt: realConfig.prompt,
+        knowledgeBase: realConfig.knowledgeBase,
+        knowledgeBaseFileName: realConfig.knowledgeBaseFileName,
+        placeholders: realConfig.placeholders,
+        inputArtifacts: realConfig.inputArtifacts,
+        rules: realConfig.rules,
+        selectedProvider: realConfig.selectedProvider,
+        boolean_checks_config: realConfig.boolean_checks_config
+      });
+    } else {
+      // Fallback for unknown nodes
+      setActiveCube({
+        id: nodeId,
+        title: 'Новая активность',
+        prompt: '',
+        scenarioName: scenarioTitle
+      });
+    }
   };
 
   const handlePlay = async (scenarioId: string) => {
@@ -79,7 +97,7 @@ export const StudioScenarioList = () => {
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2 shadow-lg shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
                 >
                   <Play className="w-4 h-4 mr-2 fill-current" />
-                  Запустить демо
+                  Запустить сценарий
                 </Button>
               </div>
             </div>
@@ -90,7 +108,7 @@ export const StudioScenarioList = () => {
                   <div 
                     key={node.id} 
                     className="w-40 h-40 bg-white rounded-2xl border border-[#009845]/10 shadow-sm hover:shadow-xl hover:shadow-[#009845]/20 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-4 text-center gap-3 group/node relative overflow-hidden"
-                    onClick={() => handleNodeClick(scenario.title, node.title)}
+                    onClick={() => handleNodeClick(scenario.title, node.id)}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-[#009845]/5 to-transparent opacity-0 group-hover/node:opacity-100 transition-opacity" />
                     

@@ -5,7 +5,10 @@ export type BlockLayoutType =
   | 'bento'       // Сетка карточек с метриками
   | 'it-summary'  // Блок ИТ-архитектуры
   | 'vision'      // Блок будущего (Агенты)
-  | 'cta';        // Призыв к действию (Пилот)
+  | 'cta'         // Призыв к действию (Пилот)
+  | 'interactive-demo' // Интерактивное демо
+  | 'exoskeleton-concept' // Концепция экзоскелета (новый слайд)
+  | 'tool-orchestrator'; // Агент-Оркестратор (новый слайд)
 
 export interface ContentItem {
   icon?: string; // Название иконки из lucide-react (например, 'FileText', 'Shield')
@@ -29,6 +32,11 @@ export interface PresentationBlock {
   imageUrl?: string; // Путь к локальной картинке, например "/images/hero.png"
   metrics?: MetricItem[];
   primaryAction?: { label: string; actionId: string }; // actionId для обработки кликов (например, 'open-player')
+  speakerScript?: string;
+  hiddenQnA?: {
+    question: string;
+    answer: string;
+  };
 }
 
 export interface PresentationData {

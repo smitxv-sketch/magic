@@ -2,21 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useScenarioLoader } from '@/hooks/useScenarioLoader';
 import { usePlayerEngine } from '@/hooks/usePlayerEngine';
+import { compilePrompt } from '@/utils/promptCompiler';
 import { ProcessMap } from './ProcessMap';
 import { PlayerControls } from './PlayerControls';
 import { ResultModal } from './ResultModal';
 import { ArtifactBadge } from './ArtifactBadge';
-import { Loader2, X } from 'lucide-react';
-import { compilePrompt } from '@/utils/promptCompiler';
-import { QRCodeSVG } from 'qrcode.react';
-
 import { ActiveStepInfo } from './ActiveStepInfo';
+import { Scenario } from '@/schemas/scenarioConfig';
+import { Loader2, X, RefreshCw } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface PlayerWorkspaceProps {
   onClose?: () => void;
+  embeddedScenario?: Scenario;
 }
 
-export const PlayerWorkspace = ({ onClose }: PlayerWorkspaceProps) => {
+export const PlayerWorkspace = ({ onClose, embeddedScenario }: PlayerWorkspaceProps) => {
   const { 
     currentScenario, 
     loadScenario, 
@@ -36,10 +37,12 @@ export const PlayerWorkspace = ({ onClose }: PlayerWorkspaceProps) => {
 
   // Load default scenario on mount if none selected
   useEffect(() => {
-    if (!currentScenario) {
+    if (embeddedScenario) {
+      loadScenario(embeddedScenario);
+    } else if (!currentScenario) {
       handleScenarioSelect('contract_review');
     }
-  }, []);
+  }, [embeddedScenario]);
 
   // Capture prompt for Mirror Mode when entering WAITING_LLM
   useEffect(() => {
@@ -70,12 +73,20 @@ export const PlayerWorkspace = ({ onClose }: PlayerWorkspaceProps) => {
     }
   };
 
+  const handleRestart = () => {
+    if (embeddedScenario) {
+      loadScenario(embeddedScenario);
+    } else if (currentScenario) {
+      handleScenarioSelect(currentScenario.scenario_id);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50/50 backdrop-blur-3xl relative overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-50/50 backdrop-blur-3xl relative overflow-hidden rounded-3xl">
       {/* Close Button (if onClose provided) */}
       {onClose && (
         <button 
@@ -83,6 +94,17 @@ export const PlayerWorkspace = ({ onClose }: PlayerWorkspaceProps) => {
           className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/80 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-slate-900 shadow-lg border border-white/50 transition-all hover:scale-110 active:scale-95"
         >
           <X className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Restart Button (for embedded mode) */}
+      {embeddedScenario && (
+        <button 
+          onClick={handleRestart}
+          className="absolute top-6 right-6 z-50 p-2 rounded-full bg-white/80 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-emerald-600 shadow-lg border border-white/50 transition-all hover:scale-110 active:scale-95"
+          title="Перезапустить демо"
+        >
+          <RefreshCw className="w-5 h-5" />
         </button>
       )}
 
@@ -120,6 +142,7 @@ export const PlayerWorkspace = ({ onClose }: PlayerWorkspaceProps) => {
       {/* Floating Controls */}
       <PlayerControls 
         onScenarioSelect={handleScenarioSelect} 
+        isEmbedded={!!embeddedScenario}
       />
 
       {/* Modals */}

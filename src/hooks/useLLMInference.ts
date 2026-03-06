@@ -55,17 +55,27 @@ async function callGigaChat(prompt: string): Promise<LLMResponse> {
   if (isContract) {
     mockResponse = {
       status: 'success',
-      ai_analysis: {
+      document_profile: {
+        category: 'договор_закупки',
+        risk_types: ['финансовый'],
+        confidence: 0.95
+      },
+      analysis: {
         severity_score: 2,
+        violations_count: 0,
+        has_blocking_issue: false,
+        boolean_checks: {
+          'check_sums': true,
+          'check_dates': true
+        },
         findings: [
-          'Сумма договора соответствует лимитам',
-          'Реквизиты контрагента проверены (GigaChat)',
-          'Рисков не обнаружено'
+          { type: 'финансовый', text: 'Сумма договора соответствует лимитам', blocking: false },
+          { type: 'юридический', text: 'Реквизиты контрагента проверены (GigaChat)', blocking: false }
         ],
         artifact: 'Согласовано GigaChat'
       },
       execution_command: {
-        action_id: 'approve',
+        action_id: 'continue_process',
         comment_to_user: 'Договор проверен GigaChat. Замечаний нет.'
       },
       time_saved_minutes: 12
@@ -73,12 +83,22 @@ async function callGigaChat(prompt: string): Promise<LLMResponse> {
   } else if (isLetter) {
     mockResponse = {
       status: 'success',
-      ai_analysis: {
+      document_profile: {
+        category: 'исходящее_письмо',
+        risk_types: ['репутационный'],
+        confidence: 0.88
+      },
+      analysis: {
         severity_score: 8,
+        violations_count: 2,
+        has_blocking_issue: true,
+        boolean_checks: {
+          'check_tone': false,
+          'check_grammar': false
+        },
         findings: [
-          'Найдены грубые ошибки в тоне письма',
-          'Отсутствует обязательное приветствие',
-          'Грамматические ошибки (GigaChat)'
+          { type: 'репутационный', text: 'Найдены грубые ошибки в тоне письма', blocking: true },
+          { type: 'репутационный', text: 'Отсутствует обязательное приветствие', blocking: false }
         ],
         artifact: 'Требуется доработка'
       },
@@ -92,13 +112,21 @@ async function callGigaChat(prompt: string): Promise<LLMResponse> {
     // Default fallback
      mockResponse = {
       status: 'success',
-      ai_analysis: {
+      document_profile: {
+        category: 'иное',
+        risk_types: [],
+        confidence: 0.5
+      },
+      analysis: {
         severity_score: 0,
-        findings: ['Анализ выполнен GigaChat'],
+        violations_count: 0,
+        has_blocking_issue: false,
+        boolean_checks: {},
+        findings: [{ type: 'операционный', text: 'Анализ выполнен GigaChat', blocking: false }],
         artifact: 'OK'
       },
       execution_command: {
-        action_id: 'approve',
+        action_id: 'continue_process',
         comment_to_user: 'Все отлично.'
       },
       time_saved_minutes: 1

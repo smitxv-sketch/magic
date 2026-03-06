@@ -26,8 +26,8 @@ export const ProcessMap = ({ scenario }: ProcessMapProps) => {
   }, [currentNodeIndex, scenario.visual_pipeline.length]);
 
   return (
-    <div className="relative w-full max-w-full overflow-x-auto pt-12 pb-20 px-10 scrollbar-hide">
-      <div className="min-w-max flex justify-center mx-auto">
+    <div className="relative w-full max-w-full overflow-x-auto pt-12 pb-20 px-4 md:px-10">
+      <div className="min-w-max flex justify-start md:justify-center mx-auto px-4">
         <div className="relative">
           
           {/* 2. Progress Line (Filled) */}
@@ -108,7 +108,7 @@ export const ProcessMap = ({ scenario }: ProcessMapProps) => {
                             "text-[10px] font-bold uppercase tracking-wider truncate",
                             isAI ? "text-purple-600" : "text-gray-500"
                           )}>
-                            {isAI ? "AI Agent" : "Human"}
+                            {isAI ? "ИИ-агент" : "Человек"}
                           </p>
                         </div>
                       </div>
@@ -121,7 +121,7 @@ export const ProcessMap = ({ scenario }: ProcessMapProps) => {
                       </h3>
                       
                       <p className="text-[10px] text-gray-400 truncate">
-                        {node.subtitle || (isAI ? "Automated Check" : "Manual Review")}
+                        {node.subtitle || (isAI ? "Автоматическая проверка" : "Ручная проверка")}
                       </p>
                     </div>
 

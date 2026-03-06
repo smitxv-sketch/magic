@@ -13,15 +13,7 @@ export const InputContextPanel = () => {
     updateActiveCube({ prompt: activeCube.prompt + ` {{${key}}} ` });
   };
 
-  // Mock placeholders from 1C
-  const mockPlaceholders = [
-    { key: 'Сумма_договора', displayName: 'Сумма договора', exampleValue: '1 500 000' },
-    { key: 'Контрагент_Название', displayName: 'Контрагент', exampleValue: 'ООО Ромашка' },
-    { key: 'Контрагент_ИНН', displayName: 'ИНН', exampleValue: '7700123456' },
-    { key: 'Дата_документа', displayName: 'Дата', exampleValue: '20.02.2026' },
-    { key: 'Тип_документа', displayName: 'Тип', exampleValue: 'Договор поставки' },
-    { key: 'Ответственный', displayName: 'Автор', exampleValue: 'Иванов И.И.' },
-  ];
+
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -34,13 +26,17 @@ export const InputContextPanel = () => {
           Данные, которые автоматически подтягиваются из карточки документа в 1С.
         </p>
         <div className="flex flex-wrap gap-2">
-          {mockPlaceholders.map((p) => (
-            <PlaceholderBadge
-              key={p.key}
-              label={p.key}
-              onClick={() => handlePlaceholderClick(p.key)}
-            />
-          ))}
+          {activeCube.placeholders && activeCube.placeholders.length > 0 ? (
+            activeCube.placeholders.map((p) => (
+              <PlaceholderBadge
+                key={p.key}
+                label={p.displayName}
+                onClick={() => handlePlaceholderClick(p.key)}
+              />
+            ))
+          ) : (
+            <div className="text-sm text-gray-400 italic">Нет переменных</div>
+          )}
         </div>
       </div>
 
@@ -57,7 +53,7 @@ export const InputContextPanel = () => {
             {activeCube.inputArtifacts.map((p) => (
               <PlaceholderBadge
                 key={p.key}
-                label={p.key}
+                label={p.displayName}
                 onClick={() => handlePlaceholderClick(p.key)}
               />
             ))}

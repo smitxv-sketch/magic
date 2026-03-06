@@ -8,22 +8,21 @@ export const StudioSidebar = () => {
 
   const scenarios = [
     {
-      id: 'contract_review',
-      title: 'Согласование договора',
-      icon: <FileText className="w-4 h-4" />,
+      id: 'incoming_letter',
+      title: 'Маршрутизация входящих (УД)',
+      icon: <Mail className="w-4 h-4" />,
       nodes: [
-        { id: 'ai_node_1', title: 'Орфография и Реквизиты', type: 'ai' },
-        { id: 'ai_node_2', title: 'Юридические риски', type: 'ai' },
-        { id: 'ai_node_3', title: 'Фин. контроль', type: 'ai' },
+        { id: 'ai_node_1', title: 'Извлечение фактов', type: 'ai' },
+        { id: 'ai_node_2', title: 'Маршрутизатор', type: 'ai' },
       ]
     },
     {
-      id: 'outgoing_letter',
-      title: 'Исходящее письмо',
-      icon: <Mail className="w-4 h-4" />,
+      id: 'contract_review',
+      title: 'Финансовый Firewall',
+      icon: <FileText className="w-4 h-4" />,
       nodes: [
-        { id: 'ai_node_letter_1', title: 'Нормоконтроль', type: 'ai' },
-        { id: 'ai_node_letter_2', title: 'Тональность', type: 'ai' },
+        { id: 'ai_node_3', title: 'Проверка математики', type: 'ai' },
+        { id: 'ai_node_4', title: 'Радар рисков', type: 'ai' },
       ]
     }
   ];

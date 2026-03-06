@@ -9,3 +9,9 @@
     scrollbar-width: none;
   }
 }
+
+@media (min-width: 2000px) {
+  html {
+    font-size: 125%; /* Scale up for 4K TV */
+  }
+}

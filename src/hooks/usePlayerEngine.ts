@@ -62,8 +62,8 @@ export function usePlayerEngine() {
           const result = await infer(prompt);
           
           // Save artifact if needed
-          if (currentNode.output_artifact_key && result.ai_analysis.artifact) {
-            setArtifact(currentNode.output_artifact_key, result.ai_analysis.artifact);
+          if (currentNode.output_artifact_key && result.analysis.artifact) {
+            setArtifact(currentNode.output_artifact_key, result.analysis.artifact);
           }
 
           setLastLLMResult(result);

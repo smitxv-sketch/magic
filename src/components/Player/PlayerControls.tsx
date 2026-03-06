@@ -8,9 +8,10 @@ import { scenarios } from '@/data/scenarioRegistry';
 
 interface PlayerControlsProps {
   onScenarioSelect: (id: string) => void;
+  isEmbedded?: boolean;
 }
 
-export const PlayerControls = ({ onScenarioSelect }: PlayerControlsProps) => {
+export const PlayerControls = ({ onScenarioSelect, isEmbedded = false }: PlayerControlsProps) => {
   const { playerState, startPlayer, pausePlayer, resetPlayer, currentScenario } = useAppStore();
 
   const isPlaying = playerState === 'ANIMATING' || playerState === 'WAITING_LLM';
@@ -21,44 +22,46 @@ export const PlayerControls = ({ onScenarioSelect }: PlayerControlsProps) => {
     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl text-white px-6 py-3 rounded-full shadow-2xl border border-white/10 flex items-center gap-6 z-50 transition-all duration-300 hover:scale-[1.02]">
       
       {/* Scenario Selector */}
-      <div className="flex items-center gap-4">
-        <Select.Root 
-            value={currentScenario?.scenario_id || ''} 
-            onValueChange={onScenarioSelect} 
-            disabled={isPlaying || isPaused}
-        >
-          <Select.Trigger className="inline-flex items-center justify-between rounded-full px-4 py-2 text-sm leading-none h-10 gap-2 bg-white/10 border border-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 w-[240px] data-[placeholder]:text-gray-400 outline-none transition-colors">
-            <Select.Value placeholder="Выберите сценарий..." />
-            <Select.Icon>
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            </Select.Icon>
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Content className="overflow-hidden bg-slate-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl z-[60] min-w-[240px] text-white">
-              <Select.Viewport className="p-1">
-                {scenarios.map(scenario => (
-                    <Select.Item key={scenario.scenario_id} value={scenario.scenario_id} className="relative flex items-center h-10 px-4 text-sm leading-none text-gray-200 rounded-lg select-none hover:bg-white/10 hover:text-white data-[highlighted]:bg-white/10 data-[highlighted]:text-white outline-none cursor-pointer">
-                        <Select.ItemText>{scenario.scenario_name}</Select.ItemText>
-                    </Select.Item>
-                ))}
-              </Select.Viewport>
-            </Select.Content>
-          </Select.Portal>
-        </Select.Root>
-
-        <div className="h-8 w-px bg-white/10" />
-
-        <Button
-            variant="ghost"
-            size="icon"
-            onClick={resetPlayer}
-            disabled={!currentScenario}
-            className="h-10 w-10 rounded-full text-gray-400 hover:text-white hover:bg-white/10"
-            title="Сбросить"
-        >
-            <RotateCcw className="w-5 h-5" />
-        </Button>
-      </div>
+      {!isEmbedded && (
+        <div className="flex items-center gap-4">
+          <Select.Root 
+              value={currentScenario?.scenario_id || ''} 
+              onValueChange={onScenarioSelect} 
+              disabled={isPlaying || isPaused}
+          >
+            <Select.Trigger className="inline-flex items-center justify-between rounded-full px-4 py-2 text-sm leading-none h-10 gap-2 bg-white/10 border border-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-primary/50 w-[240px] data-[placeholder]:text-gray-400 outline-none transition-colors">
+              <Select.Value placeholder="Выберите сценарий..." />
+              <Select.Icon>
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content className="overflow-hidden bg-slate-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl z-[60] min-w-[240px] text-white">
+                <Select.Viewport className="p-1">
+                  {scenarios.map(scenario => (
+                      <Select.Item key={scenario.scenario_id} value={scenario.scenario_id} className="relative flex items-center h-10 px-4 text-sm leading-none text-gray-200 rounded-lg select-none hover:bg-white/10 hover:text-white data-[highlighted]:bg-white/10 data-[highlighted]:text-white outline-none cursor-pointer">
+                          <Select.ItemText>{scenario.scenario_name}</Select.ItemText>
+                      </Select.Item>
+                  ))}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
+  
+          <div className="h-8 w-px bg-white/10" />
+  
+          <Button
+              variant="ghost"
+              size="icon"
+              onClick={resetPlayer}
+              disabled={!currentScenario}
+              className="h-10 w-10 rounded-full text-gray-400 hover:text-white hover:bg-white/10"
+              title="Сбросить"
+          >
+              <RotateCcw className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
 
       {/* Play/Pause Control */}
       <Button
