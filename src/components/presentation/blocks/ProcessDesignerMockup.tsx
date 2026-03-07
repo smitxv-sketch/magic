@@ -58,7 +58,7 @@ export const ProcessDesignerMockup = () => {
           <div className="absolute inset-0 flex items-center justify-center">
             
             {/* Process Chain */}
-            <div className="flex items-center gap-2 md:gap-4 scale-[0.65] md:scale-100 origin-center">
+            <div className="flex items-center gap-2 md:gap-4 scale-[0.65] md:scale-100 origin-center ml-20"> {/* Increased ml-12 to ml-20 */}
               
               {/* Step 1: Start */}
               <div className="relative group">
@@ -102,7 +102,7 @@ export const ProcessDesignerMockup = () => {
                 initial={{ opacity: 0.5, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ delay: 1.2 }}
-                className="ml-6 relative"
+                className="ml-4 relative" // Reduced ml-6 to ml-4 to close the gap
               >
                 <div className="w-32 h-20 bg-white rounded-lg border border-slate-300 shadow-sm flex flex-col items-center justify-center p-2 z-10 relative opacity-80">
                   <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mb-1">

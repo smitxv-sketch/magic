@@ -26,12 +26,22 @@ export const StudioScenarioList = () => {
     },
     {
       id: 'contract_review',
-      title: 'Финансовый Firewall',
+      title: 'Хозяйственный договор: ФИНАНСЫ',
       description: 'Проверка математики, налоговых оговорок и валютных рисков.',
       icon: <FileText className="w-6 h-6 text-blue-500" />,
       nodes: [
         { id: 'ai_node_3', title: 'AI: Проверка математики', type: 'ai' },
         { id: 'ai_node_4', title: 'AI: Радар рисков', type: 'ai' },
+      ]
+    },
+    {
+      id: 'shadow_process_demo',
+      title: 'Согласование заявок (Теневой)',
+      description: 'Сбор данных, анализ паттернов и автоматическая генерация правил.',
+      icon: <Box className="w-6 h-6 text-amber-500" />,
+      nodes: [
+        { id: 'ai_node_5', title: 'AI: Анализ рисков', type: 'ai' },
+        { id: 'ai_node_6', title: 'AI: Генерация правил', type: 'ai' },
       ]
     }
   ];

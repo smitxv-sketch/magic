@@ -32,6 +32,7 @@ export const InputContextPanel = () => {
                 key={p.key}
                 label={p.displayName}
                 onClick={() => handlePlaceholderClick(p.key)}
+                isUsed={activeCube.prompt.includes(`{{${p.key}}}`)}
               />
             ))
           ) : (

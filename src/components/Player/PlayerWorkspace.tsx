@@ -5,11 +5,12 @@ import { usePlayerEngine } from '@/hooks/usePlayerEngine';
 import { compilePrompt } from '@/utils/promptCompiler';
 import { ProcessMap } from './ProcessMap';
 import { PlayerControls } from './PlayerControls';
-import { ResultModal } from './ResultModal';
 import { ArtifactBadge } from './ArtifactBadge';
 import { ActiveStepInfo } from './ActiveStepInfo';
 import { Scenario } from '@/schemas/scenarioConfig';
-import { Loader2, X, RefreshCw } from 'lucide-react';
+import { ShadowModeDashboard } from './ShadowModeDashboard';
+import { Loader2, X, RefreshCw, Database } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface PlayerWorkspaceProps {
@@ -31,6 +32,7 @@ export const PlayerWorkspace = ({ onClose, embeddedScenario }: PlayerWorkspacePr
   
   const { loadScenario: fetchScenario, isLoading } = useScenarioLoader();
   const [lastPrompt, setLastPrompt] = useState<string>('');
+  const [isDataPanelOpen, setDataPanelOpen] = useState(false);
 
   // Initialize Engine
   usePlayerEngine();
@@ -89,13 +91,32 @@ export const PlayerWorkspace = ({ onClose, embeddedScenario }: PlayerWorkspacePr
     <div className="flex flex-col h-full bg-slate-50/50 backdrop-blur-3xl relative overflow-hidden rounded-3xl">
       {/* Close Button (if onClose provided) */}
       {onClose && (
-        <button 
-          onClick={onClose}
-          className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/80 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-slate-900 shadow-lg border border-white/50 transition-all hover:scale-110 active:scale-95"
-        >
-          <X className="w-6 h-6" />
-        </button>
+        <div className="absolute top-6 right-6 z-50 flex gap-2">
+            <button 
+              onClick={() => setDataPanelOpen(!isDataPanelOpen)}
+              className={cn(
+                "p-3 rounded-full shadow-lg border border-white/50 transition-all hover:scale-110 active:scale-95",
+                isDataPanelOpen ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white/80 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-blue-600"
+              )}
+              title="Поток данных"
+            >
+              <Database className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-3 rounded-full bg-white/80 backdrop-blur-xl hover:bg-white text-slate-500 hover:text-slate-900 shadow-lg border border-white/50 transition-all hover:scale-110 active:scale-95"
+            >
+              <X className="w-6 h-6" />
+            </button>
+        </div>
       )}
+
+      {/* Data Stream Panel */}
+      <div className="absolute top-0 right-0 h-full z-40 pointer-events-none">
+         <div className="pointer-events-auto h-full">
+            <DataStreamPanel isOpen={isDataPanelOpen} onClose={() => setDataPanelOpen(false)} />
+         </div>
+      </div>
 
       {/* Restart Button (for embedded mode) */}
       {embeddedScenario && (
@@ -116,23 +137,43 @@ export const PlayerWorkspace = ({ onClose, embeddedScenario }: PlayerWorkspacePr
               <div className="text-center mb-16">
                 <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">{currentScenario.scenario_name}</h1>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/50 border border-slate-200 text-slate-600 text-sm font-medium">
-                  <span>📄</span>
-                  <span>{currentScenario.document_mock.file_name}</span>
+                  {currentScenario.mode === 'shadow' ? (
+                    <>
+                      <span className="animate-pulse">👁️</span>
+                      <span className="text-amber-600 font-bold">Теневой режим (Сбор данных)</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📄</span>
+                      <span>{currentScenario.document_mock.file_name}</span>
+                    </>
+                  )}
                 </div>
               </div>
               
-              <ProcessMap scenario={currentScenario} />
-              
-              {/* Artifacts Display */}
-              <div className="mt-20 flex justify-center gap-4 flex-wrap px-4">
-                {Object.keys(artifacts).map(key => (
-                  <ArtifactBadge key={key} artifactKey={key} label={key} />
-                ))}
-              </div>
+              {currentScenario.mode === 'shadow' ? (
+                <ShadowModeDashboard scenario={currentScenario} />
+              ) : (
+                <>
+                  <ProcessMap scenario={currentScenario} />
+                  
+                  {/* Artifacts Display */}
+                  <div className="mt-20 flex justify-center gap-4 flex-wrap px-4">
+                    {Object.keys(artifacts).map(key => (
+                      <ArtifactBadge key={key} artifactKey={key} label={key} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Active Step Info Overlay */}
-            <ActiveStepInfo />
+            {/* Active Step Info Overlay (Only for active mode) */}
+            {currentScenario.mode !== 'shadow' && (
+              <ActiveStepInfo 
+                result={lastLLMResult} 
+                onContinue={handleContinue}
+              />
+            )}
           </>
         ) : (
           <div className="text-slate-400 mt-20 text-lg font-medium">Выберите сценарий для запуска</div>
@@ -146,12 +187,7 @@ export const PlayerWorkspace = ({ onClose, embeddedScenario }: PlayerWorkspacePr
       />
 
       {/* Modals */}
-      <ResultModal 
-        isOpen={playerState === 'SHOWING_RESULT'} 
-        result={lastLLMResult} 
-        onContinue={handleContinue}
-        promptUsed={lastPrompt}
-      />
+      {/* ResultModal removed - merged into ActiveStepInfo */}
 
       {/* Completed Screen Overlay */}
       {playerState === 'COMPLETED' && (

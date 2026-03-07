@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PresentationBlock } from '@/types/presentation';
-import { FileText, ArrowRight, ShieldAlert, FileSearch, CheckCircle2, RotateCcw, Bot, User } from 'lucide-react';
+import { FileText, ArrowRight, ShieldAlert, FileSearch, CheckCircle2, RotateCcw, Bot, User, Calculator } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
@@ -40,7 +40,7 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
     };
 
     runCycle();
-    const interval = setInterval(runCycle, 5000);
+    const interval = setInterval(runCycle, 8000); // Increased cycle to 8s for 5s pause
 
     return () => {
       clearTimeout(timer);
@@ -177,7 +177,8 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
                     initial={{ x: 0, y: 0 }}
                     animate={isMobile ? { y: '100%' } : { x: '100%' }}
                     transition={{ duration: 1, ease: "easeInOut" }}
-                    className="absolute top-0 lg:top-1/2 left-1/2 lg:left-0 -translate-x-1/2 lg:-translate-y-1/2 w-8 h-10 bg-white border border-slate-300 shadow-sm rounded flex flex-col items-center justify-center gap-1 z-30"
+                    className="absolute top-0 lg:top-1/2 left-1/2 lg:left-0 -translate-x-1/2 lg:-translate-y-1/2 w-8 h-10 bg-white border border-slate-300 shadow-sm rounded flex flex-col items-center justify-center gap-1 z-30 opacity-0" // Hide moving doc
+                    style={{ width: '32px', height: '40px' }} // Ensure size
                   >
                     <div className="w-5 h-0.5 bg-slate-300 rounded-full" />
                     <div className="w-3 h-0.5 bg-slate-300 rounded-full" />
@@ -194,7 +195,7 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
                   "bg-emerald-50 border-emerald-400 shadow-emerald-200"
                 )}>
                   {activeMode === 'standard' ? (
-                    <User className="w-12 h-12 text-slate-400" />
+                    <CheckCircle2 className="w-12 h-12 text-slate-400" />
                   ) : (
                     <Bot className={cn(
                       "w-12 h-12 transition-colors duration-300",
@@ -234,7 +235,7 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
                   activeMode === 'standard' ? "text-slate-600" : 
                   activeMode === 'firewall' ? "text-amber-700" : "text-emerald-700"
                 )}>
-                  {activeMode === 'standard' ? 'Ручная проверка' : 'ИИ-Экзоскелет'}
+                  {activeMode === 'standard' ? 'Согласование' : 'ИИ-Экзоскелет'}
                 </span>
 
                 {/* Return Path (Firewall) */}
@@ -244,19 +245,20 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
                       initial={{ opacity: 0, pathLength: 0 }}
                       animate={{ opacity: 1, pathLength: 1 }}
                       exit={{ opacity: 0 }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 w-[200%] h-24 pointer-events-none hidden lg:block"
+                      className="absolute top-full left-1/2 -translate-x-1/2 w-[400%] h-24 pointer-events-none hidden lg:block"
                     >
-                       <svg className="w-full h-full overflow-visible">
-                         <path d="M 160 0 Q 160 60 0 60 Q -160 60 -160 0" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray="6 4" />
-                         <circle cx="-160" cy="0" r="4" fill="#f59e0b" />
+                       <svg className="w-full h-full overflow-visible" viewBox="0 0 500 60" preserveAspectRatio="none">
+                         <path d="M 250 0 Q 250 60 125 60 Q 0 60 0 0" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray="6 4" />
+                         <circle cx="0" cy="0" r="4" fill="#f59e0b" />
                        </svg>
                        <motion.div 
-                          initial={{ x: 160, y: 0, scale: 1 }}
-                          animate={{ x: -160, y: 0, scale: 0.8 }}
-                          transition={{ duration: 1 }}
-                          className="absolute left-1/2 top-0 -ml-4 w-8 h-10 bg-amber-100 border border-amber-400 rounded flex items-center justify-center"
+                          initial={{ offsetDistance: "0%" }}
+                          animate={{ offsetDistance: "100%" }}
+                          transition={{ duration: 1, ease: "easeInOut" }}
+                          style={{ offsetPath: "path('M 250 0 Q 250 60 125 60 Q 0 60 0 0')", offsetRotate: "0deg" }}
+                          className="absolute left-0 top-0 w-16 h-16 bg-amber-100 border-2 border-amber-400 rounded-xl flex items-center justify-center -ml-8 -mt-8 shadow-lg z-50"
                        >
-                          <ShieldAlert className="w-5 h-5 text-amber-600" />
+                          <ShieldAlert className="w-10 h-10 text-amber-600" />
                        </motion.div>
                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-200 whitespace-nowrap">
                           Возврат на доработку
@@ -267,59 +269,20 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
               </div>
 
               {/* Arrow 2 */}
-              <div className="flex-1 w-1 h-16 lg:w-auto lg:h-1 bg-slate-200 relative mx-0 lg:mx-4 my-2 lg:my-0">
+              <div className={cn(
+                "flex-1 w-1 h-16 lg:w-auto lg:h-1 bg-slate-200 relative mx-0 lg:mx-4 my-2 lg:my-0 transition-opacity duration-300",
+                activeMode === 'standard' ? "opacity-0" : "opacity-100"
+              )}>
                 <div className="absolute bottom-0 lg:right-0 lg:top-[-6px] left-[-5px] lg:left-auto w-3 h-3 border-b-2 border-r-2 lg:border-b-0 lg:border-t-2 lg:border-r-2 border-slate-200 rotate-45" />
                 
                 {/* Moving Doc (Success) */}
                 {docPosition === 2 && (
                   <motion.div 
-                    initial={{ x: 0, y: 0 }}
-                    animate={isMobile ? { y: '100%' } : { x: '100%' }}
-                    transition={{ duration: 0.8 }}
-                    className="absolute top-0 lg:top-1/2 left-1/2 lg:left-0 -translate-x-1/2 lg:-translate-y-1/2 w-8 h-10 bg-white border border-slate-300 shadow-sm rounded flex flex-col items-center justify-center gap-1 z-30"
+                    initial={{ left: 0 }}
+                    animate={{ left: '100%' }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="absolute top-0 lg:top-1/2 -translate-x-1/2 lg:-translate-y-1/2 w-8 h-10 bg-white border border-slate-300 shadow-sm rounded flex flex-col items-center justify-center gap-1 z-30 opacity-0" // Hide moving doc
                   >
-                    {activeMode === 'copilot' && (
-                      <>
-                        {/* Artifact 1: Legal */}
-                        <motion.div 
-                          initial={{ scale: 0, x: 0, y: 0 }}
-                          animate={{ scale: 1, x: 40, y: -40 }}
-                          className="absolute z-40 bg-slate-800 text-white p-2 rounded-lg border border-slate-600 shadow-xl flex items-center gap-2 min-w-[120px]"
-                          title="Юридический анализ"
-                        >
-                          <div className="p-1 bg-purple-500/20 rounded">
-                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Юр. Анализ</span>
-                        </motion.div>
-                        
-                        {/* Artifact 2: Finance */}
-                        <motion.div 
-                          initial={{ scale: 0, x: 0, y: 0 }}
-                          animate={{ scale: 1, x: 50, y: 0 }}
-                          className="absolute z-40 bg-slate-800 text-white p-2 rounded-lg border border-slate-600 shadow-xl flex items-center gap-2 min-w-[120px]"
-                          title="Финансовая сверка"
-                        >
-                          <div className="p-1 bg-emerald-500/20 rounded">
-                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Фин. Сверка</span>
-                        </motion.div>
-
-                        {/* Artifact 3: Risks */}
-                        <motion.div 
-                          initial={{ scale: 0, x: 0, y: 0 }}
-                          animate={{ scale: 1, x: 40, y: 40 }}
-                          className="absolute z-40 bg-slate-800 text-white p-2 rounded-lg border border-slate-600 shadow-xl flex items-center gap-2 min-w-[120px]"
-                          title="Карта рисков"
-                        >
-                          <div className="p-1 bg-amber-500/20 rounded">
-                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Карта Рисков</span>
-                        </motion.div>
-                      </>
-                    )}
                     <div className="w-5 h-0.5 bg-slate-300 rounded-full" />
                     <div className="w-3 h-0.5 bg-slate-300 rounded-full" />
                   </motion.div>
@@ -328,10 +291,66 @@ export const ExoskeletonBlock = ({ block }: { block: PresentationBlock }) => {
 
               {/* Node 3: End */}
               <div className="flex flex-col items-center gap-4 relative z-20">
-                <div className="w-24 h-24 rounded-2xl bg-slate-100 border-2 border-slate-300 flex items-center justify-center shadow-sm">
-                  <CheckCircle2 className="w-10 h-10 text-slate-400" />
-                </div>
-                <span className="font-bold text-slate-600">Результат</span>
+                {activeMode === 'standard' ? (
+                  <div className="w-64 text-center">
+                    <p className="text-sm font-medium text-slate-500 italic border-l-4 border-slate-300 pl-4 py-2 bg-slate-50 rounded-r-lg">
+                      "Ответственность за достоверность и качество на исполнителе и согласующем"
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-24 h-24 rounded-2xl bg-slate-100 border-2 border-slate-300 flex items-center justify-center shadow-sm relative">
+                      <CheckCircle2 className="w-10 h-10 text-slate-400" />
+                      
+                      {/* Copilot Artifacts (Success) */}
+                      <AnimatePresence>
+                        {docPosition === 2 && activeMode === 'copilot' && (
+                          <>
+                            <motion.div 
+                              initial={{ scale: 0, x: -50, y: -50, opacity: 0 }}
+                              animate={{ scale: 1, x: -60, y: -60, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ delay: 0.1, type: "spring" }}
+                              className="absolute z-30 bg-slate-800/95 backdrop-blur-sm text-white p-3 rounded-xl border border-slate-600 shadow-2xl flex items-center gap-3 min-w-[140px]"
+                            >
+                              <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                                 <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                              </div>
+                              <span className="text-xs font-bold uppercase tracking-wider">Орфография: OK</span>
+                            </motion.div>
+                            
+                            <motion.div 
+                              initial={{ scale: 0, x: -70, y: 0, opacity: 0 }}
+                              animate={{ scale: 1, x: -80, y: 0, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ delay: 0.2, type: "spring" }}
+                              className="absolute z-40 bg-slate-800/95 backdrop-blur-sm text-white p-3 rounded-xl border border-slate-600 shadow-2xl flex items-center gap-3 min-w-[140px]"
+                            >
+                              <div className="p-1.5 bg-emerald-500/20 rounded-lg">
+                                 <ShieldAlert className="w-4 h-4 text-emerald-400" />
+                              </div>
+                              <span className="text-xs font-bold uppercase tracking-wider">Риски: Низкие</span>
+                            </motion.div>
+
+                            <motion.div 
+                              initial={{ scale: 0, x: -50, y: 50, opacity: 0 }}
+                              animate={{ scale: 1, x: -60, y: 60, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ delay: 0.3, type: "spring" }}
+                              className="absolute z-50 bg-slate-800/95 backdrop-blur-sm text-white p-3 rounded-xl border border-slate-600 shadow-2xl flex items-center gap-3 min-w-[140px]"
+                            >
+                              <div className="p-1.5 bg-amber-500/20 rounded-lg">
+                                 <Calculator className="w-4 h-4 text-amber-400" />
+                              </div>
+                              <span className="text-xs font-bold uppercase tracking-wider">Сумма: Верна</span>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    <span className="font-bold text-slate-600">Согласование</span>
+                  </>
+                )}
               </div>
 
             </div>

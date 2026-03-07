@@ -42,7 +42,11 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     ],
     inputArtifacts: [],
     rules: [],
-    boolean_checks_config: []
+    boolean_checks_config: [
+      { key: 'doc_type_check', label: 'Тип документа определен', expected_in_doc: true },
+      { key: 'sender_check', label: 'Отправитель распознан', expected_in_doc: true },
+      { key: 'date_check', label: 'Дата документа корректна', expected_in_doc: true }
+    ]
   },
 
   'ai_node_2': {
@@ -94,7 +98,10 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
         target_field_value: 'critical'
       }
     ],
-    boolean_checks_config: []
+    boolean_checks_config: [
+      { key: 'dept_found', label: 'Подразделение найдено в матрице', expected_in_doc: true },
+      { key: 'curator_assigned', label: 'Куратор назначен', expected_in_doc: true }
+    ]
   },
 
   // === Сценарий 2: Финансовый Firewall ===
@@ -134,7 +141,8 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     ],
     boolean_checks_config: [
       { key: 'sum_match', label: 'Сумма прописью совпадает с цифрами', expected_in_doc: true },
-      { key: 'vat_correct', label: 'НДС рассчитан верно', expected_in_doc: true }
+      { key: 'vat_correct', label: 'НДС рассчитан верно', expected_in_doc: true },
+      { key: 'advance_ok', label: 'Аванс не более 30%', expected_in_doc: true }
     ]
   },
 

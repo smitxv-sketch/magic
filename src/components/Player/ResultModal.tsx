@@ -17,9 +17,10 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
   if (!result) return null;
 
   const { action_id, comment_to_user } = result.execution_command;
-  const { findings, severity_score } = result.ai_analysis;
+  const { findings, severity_score } = result.analysis;
 
-  const isSuccess = action_id === 'approve';
+  // Fix: Ensure comparison is valid against the ActionId type
+  const isSuccess = action_id === 'continue_process' || action_id === 'approve';
   const isWarning = action_id === 'escalate';
   const isError = action_id === 'return_to_author';
 
@@ -107,7 +108,9 @@ export const ResultModal = ({ isOpen, result, onContinue, promptUsed }: ResultMo
                             )}>
                                 <Check className="w-3 h-3" strokeWidth={3} />
                             </div>
-                            <span className="text-gray-700 leading-snug font-medium">{finding}</span>
+                            <span className="text-gray-700 leading-snug font-medium">
+                              {typeof finding === 'string' ? finding : finding.text}
+                            </span>
                         </div>
                     ))}
                  </div>

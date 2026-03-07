@@ -9,14 +9,14 @@ export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAct
   const [showDirectorsCut, setShowDirectorsCut] = useState(false);
 
   return (
-    <section className="min-h-[90vh] flex flex-col items-center justify-center relative overflow-hidden px-6 py-20 bg-slate-900">
+    <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 pt-28 pb-20 bg-slate-900 mt-[-120px]">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/40 via-transparent to-transparent z-0" />
       
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="relative z-10 text-center max-w-4xl mx-auto"
+        className="relative z-10 text-center max-w-4xl mx-auto mt-32"
       >
         {block.badge && (
           <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-900/80 text-emerald-300 text-sm font-bold uppercase tracking-wider mb-6 border border-emerald-700 shadow-lg backdrop-blur-sm">
