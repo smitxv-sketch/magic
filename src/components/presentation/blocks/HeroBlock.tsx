@@ -23,12 +23,12 @@ export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAct
   };
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 pt-32 pb-20 bg-[#030712] mt-[-120px]">
+    <section className="min-h-[calc(100vh+120px)] flex flex-col items-center justify-center relative overflow-hidden px-6 pt-32 pb-20 bg-[#030712] mt-[-120px]">
       {/* Background Image with Dark Overlay */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear", delay: 10 }}
           className="absolute inset-0"
         >
           <TenantImage 
