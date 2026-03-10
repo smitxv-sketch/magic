@@ -11,23 +11,53 @@ import { TenantImage } from '@/components/ui/TenantImage';
 export const SplitBlock = ({ block, reverse = false }: { block: PresentationBlock, reverse?: boolean }) => {
   const [showDirectorsCut, setShowDirectorsCut] = useState(false);
 
+  // Determine if this is the "Problem" block to apply specific dark styling
+  const isProblem = block.id === 'problem-chaos';
+
   return (
-    <section className="py-24 px-6 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+    <section className={cn(
+      "py-32 px-6 relative overflow-hidden",
+      isProblem ? "bg-[#050b14]" : "bg-slate-950"
+    )}>
+      {/* Deep technological background elements */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {isProblem && (
+          <>
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-900/10 via-transparent to-transparent opacity-50" />
+            <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-emerald-900/10 rounded-full blur-[120px]" />
+          </>
+        )}
+        {!isProblem && (
+          <>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/10 via-transparent to-transparent opacity-50" />
+            <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-teal-900/10 rounded-full blur-[100px]" />
+          </>
+        )}
+        {/* Subtle grid texture */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)]" />
+      </div>
+
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
         {/* Text Content */}
         <motion.div 
           initial={{ opacity: 0, x: reverse ? 50 : -50 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className={cn("order-2", reverse ? "lg:order-2" : "lg:order-1")}
         >
           {block.badge && (
-            <span className="text-emerald-400 font-bold tracking-wider uppercase text-sm mb-4 block">
+            <span className={cn(
+              "inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.15em] mb-6 border shadow-lg backdrop-blur-sm",
+              isProblem 
+                ? "bg-red-950/50 text-red-400 border-red-800/50 shadow-[0_0_15px_rgba(248,113,113,0.1)]" 
+                : "bg-emerald-950/50 text-emerald-400 border-emerald-800/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+            )}>
               {block.badge}
             </span>
           )}
           <div className="relative inline-block group w-full">
-            <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
+            <h2 className="text-4xl md:text-5xl font-sans font-bold mb-6 leading-[1.15] bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-400 drop-shadow-sm">
               {block.title}
             </h2>
             <button 
@@ -38,23 +68,35 @@ export const SplitBlock = ({ block, reverse = false }: { block: PresentationBloc
             </button>
           </div>
 
-          <p className="text-xl text-slate-100 mb-8 leading-relaxed">
+          <p className="text-xl text-slate-300/90 mb-10 leading-relaxed font-light">
             {block.subtitle}
           </p>
           
-          <div className="space-y-6">
+          <div className="space-y-4">
             {block.content?.map((item, idx) => {
               const Icon = (item.icon && ICON_MAP[item.icon]) ? ICON_MAP[item.icon] : CheckCircle;
               return (
-                <div key={idx} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 shadow-sm hover:shadow-md transition-all hover:bg-slate-800/80">
-                  <div className="p-3 bg-emerald-900/30 rounded-xl text-emerald-400 shrink-0">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 + 0.3, duration: 0.5 }}
+                  key={idx} 
+                  className="flex items-start gap-5 p-5 rounded-2xl bg-slate-900/40 backdrop-blur-md border border-white/5 shadow-lg hover:shadow-xl hover:bg-slate-800/50 transition-all duration-300 group"
+                >
+                  <div className={cn(
+                    "p-3 rounded-xl shrink-0 transition-colors duration-300",
+                    isProblem 
+                      ? "bg-red-950/50 text-red-400 group-hover:bg-red-900/60" 
+                      : "bg-emerald-950/50 text-emerald-400 group-hover:bg-emerald-900/60"
+                  )}>
                     <Icon className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-1">{item.title}</h3>
-                    <p className="text-slate-200 leading-relaxed">{item.text}</p>
+                    <h3 className="font-semibold text-white text-lg mb-1.5 tracking-wide">{item.title}</h3>
+                    <p className="text-slate-400 leading-relaxed font-light text-sm md:text-base">{item.text}</p>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -62,23 +104,35 @@ export const SplitBlock = ({ block, reverse = false }: { block: PresentationBloc
 
         {/* Image or Interactive Mockup */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+          whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
           viewport={{ once: true }}
-          className={cn("order-1", reverse ? "lg:order-1" : "lg:order-2")}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className={cn("order-1 relative", reverse ? "lg:order-1" : "lg:order-2")}
         >
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/50 bg-white/30 backdrop-blur-md p-2 group h-full min-h-[400px]">
-            <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          {/* Deep volumetric glow behind the image container */}
+          <div className={cn(
+            "absolute inset-0 blur-[80px] rounded-full transform scale-90 opacity-50",
+            isProblem ? "bg-red-600/20" : "bg-emerald-500/20"
+          )} />
+
+          <div className="relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 bg-slate-900/50 backdrop-blur-xl p-2 group h-full min-h-[400px]">
+            {/* Glassmorphism reflection */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-20" />
             
             {block.id === 'solution-routing' ? (
               <ProcessDesignerMockup />
             ) : (
-              <TenantImage 
-                src={block.imageUrl || ''} 
-                alt={block.title} 
-                className="w-full h-full rounded-2xl bg-slate-100 object-cover aspect-[4/3]"
-                fallbackText={block.title}
-              />
+              <div className="relative w-full h-full rounded-3xl overflow-hidden bg-[#0a0f1a]">
+                <TenantImage 
+                  src={block.imageUrl || ''} 
+                  alt={block.title} 
+                  className="w-full h-full object-cover aspect-[4/3] mix-blend-screen opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                  fallbackText={block.title}
+                />
+                {/* Bokeh overlay effect */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_40%,#050b14_100%)] pointer-events-none mix-blend-multiply" />
+              </div>
             )}
           </div>
         </motion.div>

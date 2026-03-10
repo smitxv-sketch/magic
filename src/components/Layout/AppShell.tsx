@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/appStore';
 import { useTenantInitializer } from '@/hooks/useTenantInitializer';
 import { Settings, Settings2, Zap, Terminal, Briefcase, Home, Menu, X, Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { TenantLogo } from '@/components/ui/TenantLogo';
 import { SettingsModal } from './SettingsModal';
 import { StudioWorkspace } from '../Studio/StudioWorkspace';
 import { ActionsView } from '../../views/ActionsView';
@@ -93,13 +94,10 @@ export const AppShell = () => {
       {/* Navbar */}
       <header className="fixed top-4 left-4 right-4 z-50 bg-white/80 backdrop-blur-xl border border-white/40 shadow-lg rounded-2xl h-16 flex items-center justify-between px-6 transition-all duration-300">
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActiveMode('presentation' as any)}>
-          {tenantConfig?.logo && (
-            <img 
-              src={tenantConfig.logo} 
-              alt={tenantConfig.name} 
-              className="h-8 w-auto"
-            />
-          )}
+          <TenantLogo 
+            alt={tenantConfig?.name || 'Logo'} 
+            className="h-8 w-auto"
+          />
           <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block" />
           <span className="font-bold text-xl tracking-tight text-slate-800 hidden sm:inline">
             Цифровой штат
