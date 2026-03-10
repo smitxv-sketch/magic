@@ -25,16 +25,23 @@ export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAct
   return (
     <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 pt-32 pb-20 bg-[#030712] mt-[-120px]">
       {/* Background Image with Dark Overlay */}
-      <div className="absolute inset-0 z-0">
-        <TenantImage 
-          src={block.imageUrl || '/images/hero-ai-core.jpg'} 
-          alt="Hero Background" 
-          className="w-full h-full object-cover object-center"
-          fallbackText="Hero Background"
-        />
-        {/* Dark overlays for readability */}
-        <div className="absolute inset-0 bg-slate-950/80 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#030712]/60 via-[#030712]/80 to-[#030712]" />
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <motion.div
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0"
+        >
+          <TenantImage 
+            src={block.imageUrl || '/images/hero-ai-core.jpg'} 
+            alt="Hero Background" 
+            className="w-full h-full object-cover object-center"
+            fallbackText="Hero Background"
+          />
+        </motion.div>
+        {/* Dark overlays for readability - balanced for visibility and contrast */}
+        <div className="absolute inset-0 bg-[#030712]/60" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#030712_100%)] opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-transparent opacity-90" />
         
         {/* Subtle grid texture */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
@@ -52,9 +59,6 @@ export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAct
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-teal-600/10 rounded-full blur-3xl"
         />
-        {/* Vertical data line */}
-        <div className="absolute left-[15%] top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent" />
-        <div className="absolute right-[15%] top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent" />
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center">
@@ -62,12 +66,12 @@ export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAct
         {/* Central Composition */}
         <div className="relative w-full flex flex-col items-center justify-center mt-10">
           
-          {/* Glassmorphism Text Panel */}
+          {/* Glassmorphism Text Panel (Background removed) */}
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto p-8 md:p-12 rounded-3xl bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-[0_0_80px_rgba(16,185,129,0.15)]"
+            className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto p-8 md:p-12"
           >
             {/* Small digital displays / badges floating around */}
             <motion.div 
