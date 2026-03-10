@@ -3,7 +3,7 @@ import { LLMResponse } from '../schemas/llmResponse';
 import { Scenario } from '../schemas/scenarioConfig';
 
 // === ТИПЫ ===
-export type PlayerState = 'IDLE' | 'ANIMATING' | 'WAITING_LLM' | 'SHOWING_RESULT' | 'PAUSED' | 'LLM_ERROR' | 'COMPLETED';
+export type PlayerState = 'IDLE' | 'ANIMATING' | 'WAITING_LLM' | 'SHOWING_RESULT' | 'PAUSED' | 'LLM_ERROR' | 'COMPLETED' | 'EXECUTING_NODE';
 
 export type LLMProvider = 'gemini-flash' | 'gigachat' | 'local-llama';
 
@@ -63,7 +63,7 @@ export interface BooleanCheck {
 
 interface AppState {
   // === РЕЖИМ ПРИЛОЖЕНИЯ ===
-  activeMode: 'studio' | 'player' | 'action-library' | 'it-hub' | 'cases';
+  activeMode: 'studio' | 'player' | 'action-library' | 'it-hub' | 'cases' | 'presentation';
   setActiveMode: (mode: AppState['activeMode']) => void;
 
   // === НАСТРОЙКИ ===

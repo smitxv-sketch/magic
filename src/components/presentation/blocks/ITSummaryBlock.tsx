@@ -21,7 +21,7 @@ export const ITSummaryBlock = ({ block }: { block: PresentationBlock }) => {
             )}
             <div className="relative inline-block group w-full">
               <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
-                {block.title}
+                {block.title === "Теневой мониторинг (Теневой Режим)" ? "Внедрение начинается теневого мониторинга (анализ данных без фактических изменений)" : block.title}
               </h2>
               <button 
                 onClick={() => setShowDirectorsCut(true)}
@@ -31,7 +31,7 @@ export const ITSummaryBlock = ({ block }: { block: PresentationBlock }) => {
               </button>
             </div>
             <p className="text-xl text-slate-300 mb-10 leading-relaxed">
-              {block.subtitle}
+              {block.subtitle.replace("для Амбассадоров", "")}
             </p>
 
             <div className="grid gap-6">

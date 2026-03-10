@@ -4,19 +4,20 @@ import { Info, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PresentationBlock } from '@/types/presentation';
 import { DirectorsCutModal } from './DirectorsCutModal';
+import { TenantImage } from '@/components/ui/TenantImage';
 
 export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAction: (id: string) => void }) => {
   const [showDirectorsCut, setShowDirectorsCut] = useState(false);
 
   return (
-    <section className="min-h-[90vh] flex flex-col items-center justify-center relative overflow-hidden px-6 py-20 bg-slate-900">
+    <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 pt-28 pb-20 bg-slate-900 mt-[-120px]">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/40 via-transparent to-transparent z-0" />
       
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="relative z-10 text-center max-w-4xl mx-auto"
+        className="relative z-10 text-center max-w-4xl mx-auto mt-32"
       >
         {block.badge && (
           <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-900/80 text-emerald-300 text-sm font-bold uppercase tracking-wider mb-6 border border-emerald-700 shadow-lg backdrop-blur-sm">
@@ -61,13 +62,11 @@ export const HeroBlock = ({ block, onAction }: { block: PresentationBlock, onAct
           className="mt-16 relative z-10 w-full max-w-5xl"
         >
           <div className="rounded-3xl overflow-hidden shadow-2xl border border-white/50 bg-white/50 backdrop-blur-xl p-2">
-             <img 
+             <TenantImage 
                src={block.imageUrl} 
                alt="Hero Visual" 
                className="w-full h-auto rounded-2xl bg-slate-100"
-               onError={(e) => {
-                 e.currentTarget.src = 'https://placehold.co/1200x600/e2e8f0/64748b?text=Hero+Image+Placeholder';
-               }}
+               fallbackText="Hero Image Placeholder"
              />
           </div>
         </motion.div>

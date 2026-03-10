@@ -160,8 +160,9 @@ ${activeCube.prompt}
                 {testDocument.result.execution_command.action_id}
               </div>
               <ul className="list-disc pl-4 space-y-1 mb-3">
-                {testDocument.result.ai_analysis.findings.map((f, i) => (
-                  <li key={i}>{f}</li>
+                {/* Fix: Use analysis instead of ai_analysis */}
+                {testDocument.result.analysis.findings.map((f: { type: string; text: string; blocking: boolean } | string, i: number) => (
+                  <li key={i}>{typeof f === 'string' ? f : f.text}</li>
                 ))}
               </ul>
               <div className="italic opacity-80">

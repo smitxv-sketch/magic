@@ -17,7 +17,7 @@ const AINodeSchema = z.object({
   attached_knowledge_base: z.string().optional(),  // имя файла из /public/knowledge/
   input_artifacts: z.array(z.string()).optional(),  // ключи артефактов для передачи в промпт
   output_artifact_key: z.string().optional(),       // ключ под которым сохранить artifact из ответа
-  placeholders: z.record(z.string()).optional(),    // { "Сумма_договора": "1 500 000" }
+  placeholders: z.record(z.string(), z.string()).optional(),    // { "Сумма_договора": "1 500 000" }
   boolean_checks_config: z.array(z.object({
     key: z.string().optional(),
     label: z.string().optional(),
@@ -37,6 +37,12 @@ export const ScenarioNodeSchema = z.discriminatedUnion('type', [
 export const ScenarioSchema = z.object({
   scenario_id: z.string(),
   scenario_name: z.string(),
+  mode: z.enum(['active', 'shadow']).optional().default('active'),
+  collected_payloads: z.array(z.object({
+    timestamp: z.string(),
+    raw_text: z.string(),
+    extracted_entities: z.record(z.string(), z.string()),
+  })).optional(),
   document_mock: z.object({
     file_name: z.string(),
     extracted_text: z.string(),

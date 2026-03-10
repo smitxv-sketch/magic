@@ -4,6 +4,7 @@ import { Info } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { PresentationBlock } from '@/types/presentation';
 import { DirectorsCutModal } from './DirectorsCutModal';
+import { TenantImage } from '@/components/ui/TenantImage';
 
 export const BentoBlock = ({ block }: { block: PresentationBlock }) => {
   const [showDirectorsCut, setShowDirectorsCut] = useState(false);
@@ -60,13 +61,11 @@ export const BentoBlock = ({ block }: { block: PresentationBlock }) => {
             viewport={{ once: true }}
             className="mt-16 rounded-3xl overflow-hidden shadow-2xl border border-slate-200"
           >
-            <img 
+            <TenantImage 
               src={block.imageUrl} 
               alt="ROI Visual" 
               className="w-full h-auto bg-white"
-              onError={(e) => {
-                 e.currentTarget.src = 'https://placehold.co/1200x400/e2e8f0/64748b?text=ROI+Chart+Placeholder';
-               }}
+              fallbackText="ROI Chart Placeholder"
             />
           </motion.div>
         )}

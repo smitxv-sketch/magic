@@ -1,0 +1,17 @@
+{
+  "id": "default",
+  "name": "Magic Cube",
+  "logo": "/logo.svg",
+  "products": {
+    "magic_cube": {
+      "theme": {
+        "primary": "blue",
+        "secondary": "indigo",
+        "surface": "slate"
+      },
+      "features": {
+        "shadow_mode": true
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ import { LiveTestPanel } from './LiveTestPanel';
 import { Button } from '@/components/ui/button';
 import { Play, Save, ChevronLeft } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
-import { StudioScenarioList } from './StudioScenarioList';
+import { StudioScenarioListV2 } from './StudioScenarioListV2';
 import { motion } from 'framer-motion';
 
 const bentoCardClass = "bg-white/60 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 relative overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col h-full";
@@ -16,7 +16,7 @@ export const StudioWorkspace = () => {
   const { activeCubeId, activeCube, setActiveCubeId } = useAppStore();
 
   if (!activeCubeId) {
-    return <StudioScenarioList />;
+    return <StudioScenarioListV2 />;
   }
 
   return (

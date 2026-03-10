@@ -6,6 +6,7 @@ import { PresentationBlock } from '@/types/presentation';
 import { DirectorsCutModal } from './DirectorsCutModal';
 import { ICON_MAP } from '../icons';
 import { ProcessDesignerMockup } from './ProcessDesignerMockup';
+import { TenantImage } from '@/components/ui/TenantImage';
 
 export const SplitBlock = ({ block, reverse = false }: { block: PresentationBlock, reverse?: boolean }) => {
   const [showDirectorsCut, setShowDirectorsCut] = useState(false);
@@ -72,13 +73,11 @@ export const SplitBlock = ({ block, reverse = false }: { block: PresentationBloc
             {block.id === 'solution-routing' ? (
               <ProcessDesignerMockup />
             ) : (
-              <img 
-                src={block.imageUrl} 
+              <TenantImage 
+                src={block.imageUrl || ''} 
                 alt={block.title} 
                 className="w-full h-full rounded-2xl bg-slate-100 object-cover aspect-[4/3]"
-                onError={(e) => {
-                   e.currentTarget.src = `https://placehold.co/800x600/e2e8f0/64748b?text=${encodeURIComponent(block.title)}`;
-                 }}
+                fallbackText={block.title}
               />
             )}
           </div>

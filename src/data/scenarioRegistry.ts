@@ -148,10 +148,30 @@ const contractReviewScenario: Scenario = {
   ]
 };
 
+// Боевой сценарий №3: Теневой процесс (Сбор данных)
+const shadowProcessScenario: Scenario = {
+  scenario_id: 'shadow_process_demo',
+  scenario_name: 'Согласование заявок на оплату (Сбор данных)',
+  mode: 'shadow',
+  document_mock: {
+    file_name: 'Пакет_Заявок_100шт.zip',
+    extracted_text: 'Агрегированный лог прохождения 100 заявок на оплату через систему 1С:ДО.'
+  },
+  collected_payloads: [
+    { timestamp: '10:42', raw_text: 'Заявка №14. Оплата ООО "Металлург", ИНН 7453123456. Сумма: 1 500 000 руб. НДС включен.', extracted_entities: { "Контрагент": "ООО Металлург", "ИНН": "7453123456", "Сумма": "1500000" } },
+    { timestamp: '11:15', raw_text: 'Заявка №15. ИП Иванов А.А., ИНН 0274111222. Сумма: 45 000 руб. Без договора.', extracted_entities: { "Контрагент": "ИП Иванов А.А.", "ИНН": "0274111222", "Сумма": "45000", "Риск": "Нет договора" } },
+    { timestamp: '11:48', raw_text: 'Заявка №16. Оплата ПАО "ЭнергоСбыт", ИНН 7701010101. Сумма: 320 000 руб. По счету №55.', extracted_entities: { "Контрагент": "ПАО ЭнергоСбыт", "ИНН": "7701010101", "Сумма": "320000" } },
+    { timestamp: '12:05', raw_text: 'Заявка №17. ООО "СтройКомплект", ИНН 5029384756. Сумма: 12 500 руб. Аванс.', extracted_entities: { "Контрагент": "ООО СтройКомплект", "ИНН": "5029384756", "Сумма": "12500" } },
+    { timestamp: '13:30', raw_text: 'Заявка №18. ИП Петров В.В., ИНН 6677889900. Сумма: 95 000 руб. Услуги клининга.', extracted_entities: { "Контрагент": "ИП Петров В.В.", "ИНН": "6677889900", "Сумма": "95000" } }
+  ],
+  visual_pipeline: [] // Пока пустой, так как кубики еще не настроены
+};
+
 export const scenarios: Scenario[] = [
   shadowAuditScenario,
   incomingLetterScenario,
-  contractReviewScenario
+  contractReviewScenario,
+  shadowProcessScenario
 ];
 
 export const getScenarioById = (id: string): Scenario | undefined => {

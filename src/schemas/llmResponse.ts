@@ -41,7 +41,7 @@ export const AnalysisSchema = z.object({
   violations_count: z.number().min(0),
   has_blocking_issue: z.boolean(),
   // Булевы проверки — динамический набор, ключи задаются в конфиге кубика
-  boolean_checks: z.record(z.boolean()),
+  boolean_checks: z.record(z.string(), z.boolean()),
   findings: z.array(FindingSchema),
   artifact: z.string().optional(),
 });
@@ -54,7 +54,8 @@ export const ActionIdSchema = z.enum([
   'add_comment',
   'start_subprocess',
   'set_field',
-  'skip_node'
+  'skip_node',
+  'approve' // Added approve
 ]);
 
 export type ActionId = z.infer<typeof ActionIdSchema>;

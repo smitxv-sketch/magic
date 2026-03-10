@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Scenario } from '../schemas/scenarioConfig';
-import { getScenarioById } from '../data/scenarioRegistry';
+import { useTenantStore } from '@/store/tenantStore';
 
 export function useScenarioLoader() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +13,8 @@ export function useScenarioLoader() {
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const scenario = getScenarioById(scenarioId);
+      const { scenarios } = useTenantStore.getState();
+      const scenario = scenarios.find(s => s.scenario_id === scenarioId);
       
       if (!scenario) {
         throw new Error(`Scenario not found: ${scenarioId}`);

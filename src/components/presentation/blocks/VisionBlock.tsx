@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Info, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { PresentationBlock } from '@/types/presentation';
 import { DirectorsCutModal } from './DirectorsCutModal';
 import { ICON_MAP } from '../icons';
@@ -50,9 +51,9 @@ export const VisionBlock = ({ block }: { block: PresentationBlock }) => {
                     <Icon className="w-10 h-10" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 mb-4">{item.title}</h3>
-                  <p className="text-slate-600 leading-relaxed text-lg">
-                    {item.text}
-                  </p>
+                  <div className="text-slate-600 leading-relaxed text-lg text-left w-full [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mt-2 [&>p]:mb-4 [&>strong]:text-slate-900 [&>strong]:font-semibold">
+                    <ReactMarkdown>{item.text}</ReactMarkdown>
+                  </div>
                 </div>
               </motion.div>
             );

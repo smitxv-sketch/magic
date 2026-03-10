@@ -40,7 +40,20 @@ export const PlayerControls = ({ onScenarioSelect, isEmbedded = false }: PlayerC
                 <Select.Viewport className="p-1">
                   {scenarios.map(scenario => (
                       <Select.Item key={scenario.scenario_id} value={scenario.scenario_id} className="relative flex items-center h-10 px-4 text-sm leading-none text-gray-200 rounded-lg select-none hover:bg-white/10 hover:text-white data-[highlighted]:bg-white/10 data-[highlighted]:text-white outline-none cursor-pointer">
-                          <Select.ItemText>{scenario.scenario_name}</Select.ItemText>
+                          <Select.ItemText>
+                            <div className="flex items-center gap-2">
+                              {scenario.scenario_name}
+                              {scenario.mode === 'shadow' ? (
+                                <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 uppercase tracking-wider font-bold animate-pulse">
+                                  👁️ Shadow
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30 uppercase tracking-wider font-bold">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                          </Select.ItemText>
                       </Select.Item>
                   ))}
                 </Select.Viewport>

@@ -1,0 +1,17 @@
+{
+  "id": "ues",
+  "name": "Уралэнергосбыт",
+  "logo": "https://uralsbyt.ru/local/templates/delement/frontend/assets/images/logo-ues.svg",
+  "products": {
+    "magic_cube": {
+      "theme": {
+        "primary": "emerald",
+        "secondary": "amber",
+        "surface": "slate"
+      },
+      "features": {
+        "shadow_mode": true
+      }
+    }
+  }
+}
