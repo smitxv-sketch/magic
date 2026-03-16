@@ -4,6 +4,7 @@ import { Scenario } from '@/schemas/scenarioConfig';
 const shadowAuditScenario: Scenario = {
   scenario_id: 'shadow_audit',
   scenario_name: 'Теневой сбор метрик (Входящие и Договоры)',
+  mode: 'shadow',
   document_mock: {
     file_name: 'Пакет_документов_за_неделю.zip',
     extracted_text: 'Анализ потока: 500 входящих писем (ГЖИ, Физлица) и 40 Хозяйственных договоров.'
@@ -54,6 +55,7 @@ const shadowAuditScenario: Scenario = {
 const incomingLetterScenario: Scenario = {
   scenario_id: 'incoming_letter',
   scenario_name: 'Маршрутизация входящих (Управление делами)',
+  mode: 'active',
   document_mock: {
     file_name: 'Письмо_ГЖИ_Металлургическое_отделение.pdf',
     extracted_text: 'ПРЕДПИСАНИЕ. Государственная жилищная инспекция требует предоставить разъяснения о порядке начисления платы за электроэнергию по лицевым счетам потребителей (Металлургическое отделение). Срок исполнения: 3 рабочих дня.'
@@ -103,6 +105,7 @@ const incomingLetterScenario: Scenario = {
 const contractReviewScenario: Scenario = {
   scenario_id: 'contract_review',
   scenario_name: 'Финансовый Firewall (Хозяйственный договор)',
+  mode: 'active',
   document_mock: {
     file_name: 'Хоздоговор_Поставка_Оборудования_№45.docx',
     extracted_text: 'Хозяйственный договор на поставку серверов. Порядок расчетов: Аванс 60% в течение 5 дней, постоплата 50% после подписания акта. Ответственность: В случае просрочки оплаты начисляются пени в размере 1% за каждый день просрочки.'

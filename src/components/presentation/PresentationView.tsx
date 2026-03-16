@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { useTenantStore } from '@/store/tenantStore';
 import { PresentationBlock } from '@/types/presentation';
-import { HeroBlock } from './blocks/HeroBlock';
-import { SplitBlock } from './blocks/SplitBlock';
-import { BentoBlock } from './blocks/BentoBlock';
-import { ITSummaryBlock } from './blocks/ITSummaryBlock';
-import { VisionBlock } from './blocks/VisionBlock';
-import { CTABlock } from './blocks/CTABlock';
-import { InteractiveDemoBlock } from './blocks/InteractiveDemoBlock';
-import { ExoskeletonBlock } from './blocks/ExoskeletonBlock';
-import { ToolOrchestratorBlock } from './blocks/ToolOrchestratorBlock';
+import { HeroIntroSection } from './blocks/HeroIntroSection';
+import { ProblemChaosSection } from './blocks/ProblemChaosSection';
+import { SolutionRoutingSection } from './blocks/SolutionRoutingSection';
+import { ShadowModeIntroSection } from './blocks/ShadowModeIntroSection';
+import { DemoShadowAuditSection } from './blocks/DemoShadowAuditSection';
+import { DemoSecretarySection } from './blocks/DemoSecretarySection';
+import { DemoLawyerSection } from './blocks/DemoLawyerSection';
+import { MetricsRoiSection } from './blocks/MetricsRoiSection';
+import { ItArchitectureSection } from './blocks/ItArchitectureSection';
+import { FutureAgentsSection } from './blocks/FutureAgentsSection';
+import { CtaPilotSection } from './blocks/CtaPilotSection';
+import { ExoskeletonConceptSection } from './blocks/ExoskeletonConceptSection';
+import { ToolOrchestratorSection } from './blocks/ToolOrchestratorSection';
 import { SpeakerModal } from './SpeakerModal';
 import { Loader2 } from 'lucide-react';
 
@@ -20,10 +24,8 @@ export const PresentationView = () => {
   const [showSpeakerModal, setShowSpeakerModal] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string>('');
   
-  // Use the new presentation data
   const slides = (presentation?.blocks || []) as PresentationBlock[];
 
-  // Global listener for Director's Cut (Shift + ?)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey && e.key === '?') {
@@ -34,7 +36,6 @@ export const PresentationView = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Track active block for Speaker Modal context
   useEffect(() => {
     if (slides.length === 0) return;
 
@@ -75,32 +76,91 @@ export const PresentationView = () => {
     );
   }
 
+  // Helper to safely get a block by ID
+  const getBlock = (id: string) => slides.find(b => b.id === id);
+
   return (
     <div className="min-h-screen bg-slate-950">
-      {slides.map((block) => {
-        const renderBlock = () => {
-          switch (block.layout) {
-            case 'hero': return <HeroBlock block={block} onAction={handleAction} />;
-            case 'split-right': return <SplitBlock block={block} />;
-            case 'split-left': return <SplitBlock block={block} reverse />;
-            case 'bento': return <BentoBlock block={block} />;
-            case 'it-summary': return <ITSummaryBlock block={block} />;
-            case 'vision': return <VisionBlock block={block} />;
-            case 'cta': return <CTABlock block={block} onAction={handleAction} />;
-            case 'interactive-demo': return <InteractiveDemoBlock block={block} />;
-            case 'exoskeleton-concept': return <ExoskeletonBlock block={block} />;
-            case 'tool-orchestrator': return <ToolOrchestratorBlock block={block} />;
-            default: return null;
-          }
-        };
-
-        return (
-          <div id={`section-${block.id}`} key={block.id}>
-            {renderBlock()}
-          </div>
-        );
-      })}
       
+      {/* Сборка лендинга из независимых секций */}
+      {getBlock('hero-intro') && (
+        <div id="section-hero-intro">
+          <HeroIntroSection block={getBlock('hero-intro')!} onAction={handleAction} />
+        </div>
+      )}
+
+      {getBlock('exoskeleton-concept') && (
+        <div id="section-exoskeleton-concept">
+          <ExoskeletonConceptSection block={getBlock('exoskeleton-concept')!} />
+        </div>
+      )}
+
+      {getBlock('tool-orchestrator') && (
+        <div id="section-tool-orchestrator">
+          <ToolOrchestratorSection block={getBlock('tool-orchestrator')!} />
+        </div>
+      )}
+
+      {getBlock('problem-chaos') && (
+        <div id="section-problem-chaos">
+          <ProblemChaosSection block={getBlock('problem-chaos')!} />
+        </div>
+      )}
+
+      {getBlock('solution-routing') && (
+        <div id="section-solution-routing">
+          <SolutionRoutingSection block={getBlock('solution-routing')!} />
+        </div>
+      )}
+
+      {getBlock('shadow-mode-intro') && (
+        <div id="section-shadow-mode-intro">
+          <ShadowModeIntroSection block={getBlock('shadow-mode-intro')!} />
+        </div>
+      )}
+
+      {getBlock('demo-shadow-audit') && (
+        <div id="section-demo-shadow-audit">
+          <DemoShadowAuditSection block={getBlock('demo-shadow-audit')!} />
+        </div>
+      )}
+
+      {getBlock('demo-secretary') && (
+        <div id="section-demo-secretary">
+          <DemoSecretarySection block={getBlock('demo-secretary')!} />
+        </div>
+      )}
+
+      {getBlock('demo-lawyer') && (
+        <div id="section-demo-lawyer">
+          <DemoLawyerSection block={getBlock('demo-lawyer')!} />
+        </div>
+      )}
+
+      {getBlock('metrics-roi') && (
+        <div id="section-metrics-roi">
+          <MetricsRoiSection block={getBlock('metrics-roi')!} />
+        </div>
+      )}
+
+      {getBlock('it-architecture') && (
+        <div id="section-it-architecture">
+          <ItArchitectureSection block={getBlock('it-architecture')!} />
+        </div>
+      )}
+
+      {getBlock('future-agents') && (
+        <div id="section-future-agents">
+          <FutureAgentsSection block={getBlock('future-agents')!} />
+        </div>
+      )}
+
+      {getBlock('cta-pilot') && (
+        <div id="section-cta-pilot">
+          <CtaPilotSection block={getBlock('cta-pilot')!} onAction={handleAction} />
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="py-12 bg-slate-950 text-slate-600 text-center text-sm border-t border-slate-900">
         <p>© {new Date().getFullYear()} {presentation.meta.company}. {presentation.meta.department}.</p>

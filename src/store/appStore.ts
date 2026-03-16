@@ -137,10 +137,17 @@ export const useAppStore = create<AppState>((set) => ({
     prompt: '',
     knowledgeBase: null,
     knowledgeBaseFileName: null,
-    placeholders: [],
-    inputArtifacts: [ // Mock artifacts
-      { key: '{{normcontrol_result}}', displayName: 'Результат нормоконтроля', exampleValue: 'Ошибок не найдено' },
-      { key: '{{previous_approver_comment}}', displayName: 'Комментарий руководителя', exampleValue: 'Согласовано с замечаниями' },
+    placeholders: [
+      { key: 'inn_kontragenta', displayName: 'ИНН Контрагента', exampleValue: '7453123456' },
+      { key: 'nomer_dogovora', displayName: 'Номер договора', exampleValue: 'УЭС-2024/45-Э' },
+      { key: 'summa_scheta', displayName: 'Сумма счета', exampleValue: '1 500 000.00' },
+      { key: 'licevoy_schet', displayName: 'Лицевой счет', exampleValue: '1002345678' },
+      { key: 'pokazaniya_pu', displayName: 'Показания ПУ', exampleValue: '15432 kWh' },
+      { key: 'tip_obrasheniya', displayName: 'Тип обращения', exampleValue: 'Жалоба на начисление' },
+    ],
+    inputArtifacts: [
+      { key: 'extracted_entities', displayName: 'Извлеченные сущности', exampleValue: '{"Контрагент": "ООО Металлург", "ИНН": "7453123456"}' },
+      { key: 'contract_risks', displayName: 'Найденные риски', exampleValue: 'Отсутствует налоговая оговорка' },
     ],
     rules: [],
     selectedProvider: 'gigachat',

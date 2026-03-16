@@ -42,7 +42,7 @@ interface TenantState {
 const DEFAULT_TENANT_ID = 'default';
 const DEFAULT_PRODUCT_ID = 'magic_cube';
 
-export const useTenantStore = create<TenantState>((set, get) => ({
+export const useTenantStore = create<TenantState>((set) => ({
   currentTenantId: DEFAULT_TENANT_ID,
   currentProductId: DEFAULT_PRODUCT_ID,
   config: null,

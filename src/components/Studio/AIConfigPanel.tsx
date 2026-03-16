@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { KnowledgeDropZone } from './KnowledgeDropZone';
-import { Sparkles, BookOpen, Cpu, Wrench, Plus, Trash2, CheckSquare, Info, Loader2, Wand2 } from 'lucide-react';
+import { Sparkles, BookOpen, Cpu, Wrench, Plus, Trash2, CheckSquare, Info, Loader2, Wand2, ChevronDown, ChevronUp, Database } from 'lucide-react';
 import { PromptBuilderModal } from './PromptBuilderModal';
 import { generateBooleanKey } from '@/utils/keyGenerator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -19,6 +19,8 @@ export const AIConfigPanel = () => {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [step, setStep] = useState<'description' | 'config'>('config');
   const [processDescription, setProcessDescription] = useState('');
+  const [isContextExpanded, setIsContextExpanded] = useState(false);
+  const [exampleCount, setExampleCount] = useState('10');
 
   const addBooleanCheck = () => {
     if (!newCheckLabel) return;
@@ -42,14 +44,25 @@ export const AIConfigPanel = () => {
     // Simulate AI analysis
     setTimeout(() => {
       updateActiveCube({
-        prompt: "Проанализируй документ на наличие обязательных реквизитов: дата, номер, подпись, печать. Проверь соответствие суммы прописью и цифрами. Выяви риски, связанные с отсутствием полномочий подписанта.",
+        prompt: `Ты — AI-аудитор. Твоя задача проанализировать входящий документ и сверить его с данными из учетной системы.
+
+Входные данные из системы:
+- ИНН Контрагента: {{inn_kontragenta}}
+- Номер договора: {{nomer_dogovora}}
+- Ожидаемая сумма: {{summa_scheta}}
+
+Инструкция:
+1. Проверь наличие обязательных реквизитов: дата, номер, подпись, печать.
+2. Сверь ИНН из документа с {{inn_kontragenta}}.
+3. Убедись, что итоговая сумма в документе совпадает с {{summa_scheta}}.
+4. Выяви риски, связанные с отсутствием полномочий подписанта.`,
         boolean_checks_config: [
           { key: "has_date", label: "Дата документа", expected_in_doc: true },
           { key: "has_number", label: "Номер документа", expected_in_doc: true },
           { key: "has_signature", label: "Подпись", expected_in_doc: true },
           { key: "has_stamp", label: "Печать", expected_in_doc: true },
-          { key: "sum_match", label: "Сумма совпадает", expected_in_doc: true },
-          { key: "risk_auth", label: "Полномочия подтверждены", expected_in_doc: true }
+          { key: "inn_match", label: "ИНН совпадает", expected_in_doc: true },
+          { key: "sum_match", label: "Сумма совпадает", expected_in_doc: true }
         ]
       });
       setIsSuggesting(false);
@@ -59,7 +72,7 @@ export const AIConfigPanel = () => {
 
   if (step === 'description') {
     return (
-      <div className="h-full flex flex-col gap-6 p-4">
+      <div className="h-full flex flex-col gap-6 p-4 overflow-y-auto">
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-slate-900">Опишите задачу</h3>
           <p className="text-sm text-slate-500">
@@ -71,23 +84,69 @@ export const AIConfigPanel = () => {
           value={processDescription}
           onChange={(e) => setProcessDescription(e.target.value)}
           placeholder="Например: Нужно проверить входящий счет на оплату. Убедиться, что есть печать и подпись, проверить реквизиты контрагента по базе ФНС и сверить сумму с договором..."
-          className="h-[200px] resize-none p-4 text-base shadow-sm border-slate-200 focus:ring-purple-500"
+          className="h-[160px] resize-none p-4 text-base shadow-sm border-slate-200 focus:ring-[#009845]"
         />
+
+        {/* Data Context Section */}
+        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+          <button 
+            onClick={() => setIsContextExpanded(!isContextExpanded)}
+            className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-slate-700 font-medium">
+              <Database className="w-4 h-4 text-[#009845]" />
+              Контекст данных для анализа
+            </div>
+            {isContextExpanded ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+          </button>
+          
+          {isContextExpanded && (
+            <div className="p-4 border-t border-slate-200 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-500 uppercase tracking-wider">Доступные поля из 1С</Label>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-mono">ИНН</span>
+                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-mono">Дата</span>
+                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-mono">Сумма</span>
+                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-mono">Номер_Договора</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <Label className="text-sm text-slate-700">Количество примеров документов для анализа</Label>
+                <p className="text-xs text-slate-500 mb-2">
+                  AI проанализирует исторические данные, чтобы лучше понять специфику ваших документов.
+                </p>
+                <Select value={exampleCount} onValueChange={setExampleCount}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Выберите количество" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 документов (Быстрый анализ)</SelectItem>
+                    <SelectItem value="10">10 документов (Оптимально)</SelectItem>
+                    <SelectItem value="20">20 документов (Глубокий анализ)</SelectItem>
+                    <SelectItem value="50">50 документов (Максимальная точность)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </div>
 
         <Button 
           onClick={handleSuggestConfiguration}
           disabled={!processDescription || isSuggesting}
-          className="w-full h-12 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/20 text-lg font-medium"
+          className="w-full h-12 bg-[#009845] hover:bg-[#007d39] text-white shadow-lg shadow-[#009845]/20 text-lg font-medium mt-auto"
         >
           {isSuggesting ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Анализируем...
+              Анализируем {exampleCount} документов...
             </>
           ) : (
             <>
               <Wand2 className="w-5 h-5 mr-2" />
-              Далее
+              Сгенерировать промпт
             </>
           )}
         </Button>
@@ -120,7 +179,7 @@ export const AIConfigPanel = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => setStep('description')}
+            onClick={() => setIsPromptBuilderOpen(true)}
             className="h-7 text-xs gap-1.5 bg-[#009845]/5 text-[#009845] border-[#009845]/20 hover:bg-[#009845]/10"
           >
             <Wrench className="w-3 h-3" />

@@ -10,7 +10,8 @@ export const InputContextPanel = () => {
     // Insert into prompt at cursor position (simplified: just append for now, 
     // real implementation needs ref to textarea)
     // For this demo, we'll just append to the prompt in the store
-    updateActiveCube({ prompt: activeCube.prompt + ` {{${key}}} ` });
+    const formattedKey = key.startsWith('{{') ? key : `{{${key}}}`;
+    updateActiveCube({ prompt: activeCube.prompt + ` ${formattedKey} ` });
   };
 
 
@@ -32,7 +33,7 @@ export const InputContextPanel = () => {
                 key={p.key}
                 label={p.displayName}
                 onClick={() => handlePlaceholderClick(p.key)}
-                isUsed={activeCube.prompt.includes(`{{${p.key}}}`)}
+                isUsed={activeCube.prompt.includes(p.key.startsWith('{{') ? p.key : `{{${p.key}}}`)}
               />
             ))
           ) : (

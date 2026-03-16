@@ -45,7 +45,7 @@ export const AppShell = () => {
     await new Promise(resolve => setTimeout(resolve, 800));
     
     // Check against environment variable first, then fallback
-    const correctPassword = import.meta.env.VITE_TIMELINE_PASSWORD || 'ues2024';
+    const correctPassword = (import.meta as any).env.VITE_TIMELINE_PASSWORD || 'ues2024';
     
     if (password === correctPassword) {
       localStorage.setItem('timeline_auth_token', 'valid_session');

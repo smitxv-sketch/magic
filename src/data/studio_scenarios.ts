@@ -24,8 +24,8 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     prompt: `Ты — опытный делопроизводитель. Твоя задача — проанализировать текст входящего письма и извлечь ключевые факты в формате JSON.
 
 Входные данные:
-- Текст письма: {{ocr_text}}
-- Отправитель: {{sender_name}}
+- Текст письма: {{tekst_pisma}}
+- Отправитель: {{otpravitel}}
 
 Инструкция:
 1. Определи тип документа (Письмо, Претензия, Запрос госоргана, Реклама).
@@ -37,8 +37,8 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     knowledgeBase: null,
     knowledgeBaseFileName: null,
     placeholders: [
-      { key: '{{ocr_text}}', displayName: 'Текст письма (OCR)', exampleValue: 'Прошу предоставить информацию о тарифах...' },
-      { key: '{{sender_name}}', displayName: 'Отправитель', exampleValue: 'ООО "Ромашка"' }
+      { key: 'tekst_pisma', displayName: 'Текст письма (OCR)', exampleValue: 'Прошу предоставить информацию о тарифах...' },
+      { key: 'otpravitel', displayName: 'Отправитель', exampleValue: 'ООО "Ромашка"' }
     ],
     inputArtifacts: [],
     rules: [],
@@ -57,9 +57,9 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     prompt: `Ты — диспетчер входящей корреспонденции. Используя извлеченные факты и Матрицу Ответственности, определи, кому направить документ.
 
 Входные данные:
-- Тип документа: {{doc_type}}
-- Суть: {{summary}}
-- Отправитель: {{sender_name}}
+- Тип документа: {{tip_dokumenta}}
+- Суть: {{kratkoe_soderzhanie}}
+- Отправитель: {{otpravitel}}
 
 Матрица ответственности (фрагмент):
 - Жалобы на начисления -> Департамент расчетов
@@ -71,12 +71,12 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     knowledgeBase: 'matrix_v12.pdf',
     knowledgeBaseFileName: 'Матрица_Ответственности_2024.pdf',
     placeholders: [
-      { key: '{{doc_type}}', displayName: 'Тип документа', exampleValue: 'Претензия' },
-      { key: '{{summary}}', displayName: 'Краткое содержание', exampleValue: 'Несогласие с начислением пени за март' },
-      { key: '{{sender_name}}', displayName: 'Отправитель', exampleValue: 'Иванов И.И.' }
+      { key: 'tip_dokumenta', displayName: 'Тип документа', exampleValue: 'Претензия' },
+      { key: 'kratkoe_soderzhanie', displayName: 'Краткое содержание', exampleValue: 'Несогласие с начислением пени за март' },
+      { key: 'otpravitel', displayName: 'Отправитель', exampleValue: 'Иванов И.И.' }
     ],
     inputArtifacts: [
-      { key: '{{extraction_result}}', displayName: 'Результат извлечения', exampleValue: '{ "type": "claim", "urgency": "high" }' }
+      { key: 'extraction_result', displayName: 'Результат извлечения', exampleValue: '{ "type": "claim", "urgency": "high" }' }
     ],
     rules: [
       {
@@ -113,8 +113,8 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     prompt: `Ты — финансовый аудитор. Проверь корректность расчетов в договоре.
 
 Входные данные:
-- Текст раздела "Стоимость": {{price_section}}
-- Спецификация (таблица): {{spec_table}}
+- Текст раздела "Стоимость": {{razdel_stoimost}}
+- Спецификация (таблица): {{specifikaciya_json}}
 
 Инструкция:
 1. Найди общую сумму договора прописью и цифрами. Сравни их.
@@ -125,8 +125,8 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     knowledgeBase: null,
     knowledgeBaseFileName: null,
     placeholders: [
-      { key: '{{price_section}}', displayName: 'Раздел "Стоимость"', exampleValue: 'Общая сумма составляет 100 000 (Сто тысяч) рублей...' },
-      { key: '{{spec_table}}', displayName: 'Спецификация JSON', exampleValue: '[{"item": "Услуга 1", "qty": 1, "price": 100000}]' }
+      { key: 'razdel_stoimost', displayName: 'Раздел "Стоимость"', exampleValue: 'Общая сумма составляет 100 000 (Сто тысяч) рублей...' },
+      { key: 'specifikaciya_json', displayName: 'Спецификация JSON', exampleValue: '[{"item": "Услуга 1", "qty": 1, "price": 100000}]' }
     ],
     inputArtifacts: [],
     rules: [
@@ -154,7 +154,7 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     prompt: `Ты — риск-менеджер. Проверь договор на наличие недопустимых условий согласно Политике №54-ФЗ.
 
 Входные данные:
-- Полный текст договора: {{full_text}}
+- Полный текст договора: {{tekst_dogovora}}
 
 Критические риски (искать обязательно):
 1. Аванс более 30% без банковской гарантии.
@@ -166,10 +166,10 @@ export const STUDIO_SCENARIOS_DATA: Record<string, StudioNodeConfig> = {
     knowledgeBase: 'risk_policy_2024.pdf',
     knowledgeBaseFileName: 'Политика_Управления_Рисками.pdf',
     placeholders: [
-      { key: '{{full_text}}', displayName: 'Текст договора', exampleValue: 'ДОГОВОР ПОСТАВКИ №...' }
+      { key: 'tekst_dogovora', displayName: 'Текст договора', exampleValue: 'ДОГОВОР ПОСТАВКИ №...' }
     ],
     inputArtifacts: [
-      { key: '{{math_check_result}}', displayName: 'Результат проверки математики', exampleValue: '{"valid": true}' }
+      { key: 'math_check_result', displayName: 'Результат проверки математики', exampleValue: '{"valid": true}' }
     ],
     rules: [
       {

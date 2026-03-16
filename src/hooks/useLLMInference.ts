@@ -38,7 +38,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<LLMResponse> 
   }
 }
 
-const GIGACHAT_API_URL = '/api/gigachat/chat/completions'; // Proxy or direct if allowed (usually needs backend)
+// const GIGACHAT_API_URL = '/api/gigachat/chat/completions'; // Proxy or direct if allowed (usually needs backend)
 // For this demo, we will mock GigaChat response since we don't have a backend proxy set up in this environment for GigaChat auth.
 // In a real app, this would call a backend endpoint that handles GigaChat OAuth.
 

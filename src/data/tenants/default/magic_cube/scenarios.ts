@@ -4,6 +4,7 @@ import { Scenario } from '@/schemas/scenarioConfig';
 const invoiceProcessingScenario: Scenario = {
   scenario_id: 'invoice_processing',
   scenario_name: 'Автоматизация обработки счетов',
+  mode: 'active',
   document_mock: {
     file_name: 'Счет_#12345.pdf',
     extracted_text: 'Счет #12345 от ООО "Поставщик". Итого: 500,000 руб. Срок оплаты: 31.12.2023. Услуги: Разработка ПО.'
@@ -53,6 +54,7 @@ const invoiceProcessingScenario: Scenario = {
 const contractReviewScenario: Scenario = {
   scenario_id: 'contract_review_default',
   scenario_name: 'Анализ рисков договора',
+  mode: 'active',
   document_mock: {
     file_name: 'Договор_Услуг_Черновик.docx',
     extracted_text: 'Договор возмездного оказания услуг. Расторжение: уведомление за 30 дней. Лимит ответственности: 100% от суммы услуг. Подсудность: г. Москва.'

@@ -1,0 +1,2033 @@
+# AI-Оркестратор СЭД — Полное ТЗ для AI-агента (Google AI Studio)
+
+> **Формат использования:** Вставь этот документ целиком как системный промпт или первое сообщение в Google AI Studio / Gemini Code Assist. Агент должен прочитать весь документ перед тем как написать первую строчку кода.
+
+---
+
+## РАЗДЕЛ 0: КТО ТЫ И В ЧЁМ ТВОЯ ЗАДАЧА
+
+Ты — senior full-stack разработчик. Тебе нужно с нуля построить и задеплоить в GitHub полностью рабочий интерактивный демо-стенд платформы AI-оркестрации для систем электронного документооборота.
+
+**Твой результат:** репозиторий на GitHub с полным кодом, который можно клонировать, запустить `npm install && npm run dev` и получить работающий стенд. Никаких заглушек, никаких TODO в критических местах.
+
+**Принцип работы:** сначала прочитай весь документ целиком. Потом задай вопросы если они есть. Потом строй — спринт за спринтом, файл за файлом, без пропусков.
+
+---
+
+## РАЗДЕЛ 1: КОНТЕКСТ ПРОДУКТА (обязательно к пониманию)
+
+### Что это такое
+
+Платформа — «интеллектуальный экзоскелет» для 1С:Документооборот (1С:ДО). Она **не заменяет** СЭД, а надстраивается над ней как внешний микросервис. Компании вроде УЭС (Уралэнергосбыт) не будут менять 1С:ДО — это миллионы рублей и годы внедрения. Но они охотно добавят умный слой поверх.
+
+### Ключевая метафора
+
+Представь конвейер на заводе. По нему едет документ (договор, письмо, заявка). На определённых точках конвейера стоят **AI-Кубики** — автономные контролёры. Каждый кубик берёт документ, прогоняет через LLM с корпоративным регламентом и принимает решение: пропустить, вернуть, эскалировать.
+
+### Два режима платформы
+
+**Режим "Студия"** — рабочий интерфейс Владельца процесса (Начальник отдела ДО). Здесь настраиваются кубики: пишутся промпты, загружаются регламенты (.md файлы), настраиваются правила реакции. Это **реальный продукт**.
+
+**Режим "Плеер"** — анимационная визуализация. Документ едет по маршруту, останавливается на кубиках, LLM анализирует в реальном времени, всплывают красивые модальные окна с результатами. Это **wow-эффект для питча** инвесторам и топ-менеджменту.
+
+### Для кого стенд
+
+Первый показ — Начальник отдела ДО (не технарь). Второй показ — Генеральный директор + ИТ-директор + руководитель ИБ. Интерфейс должен быть понятен человеку без технического образования.
+
+### Технологическая философия
+
+Мы **не пишем свою нейросеть**. Мы стоим на плечах гигантов (Gemini Flash) и делаем узкое, точечное решение для конкретной боли: контроль качества документов в 1С:ДО. Вся сложность — в оркестрации, промптах и UX, а не в ML.
+
+---
+
+## РАЗДЕЛ 2: ТЕХНОЛОГИЧЕСКИЙ СТЕК (строго обязателен)
+
+```
+Frontend:     React 18 + Vite
+Language:     TypeScript (strict: true, any запрещён)
+Styling:      Tailwind CSS v3 (только семантические токены, см. раздел 9)
+Animation:    Framer Motion
+State:        Zustand (единый глобальный store, SSOT)
+Validation:   Zod (все JSON от LLM и конфиги валидируются)
+UI Kit:       shadcn/ui (Radix под капотом)
+Icons:        Lucide React
+Doc parsing:  mammoth.js (.docx → text), pdf.js (.pdf → text)
+LLM:          Google Gemini Flash API (вызовы из браузера напрямую)
+Deploy:       GitHub репозиторий (Vite build, готов к Vercel/Firebase Hosting)
+```
+
+**Почему Gemini из браузера:** для демо-стенда нет смысла поднимать бэкенд. Ключ Gemini хранится в localStorage, вводится через Settings Modal. В коде и репозитории ключей нет никогда.
+
+---
+
+## РАЗДЕЛ 3: АРХИТЕКТУРНЫЕ ЗАКОНЫ (нарушение недопустимо)
+
+1. **350 строк максимум** на файл. Превышение → декомпозиция немедленно.
+
+2. **SSOT через Zustand.** Любые данные нужные более чем одному компоненту — в store. Никаких prop drilling и дублирования состояния.
+
+3. **SOC — разделение ответственности:**
+   - Компоненты (`/components`) — только рендеринг и локальный UI-стейт
+   - Хуки (`/hooks`) — бизнес-логика и side effects
+   - Утилиты (`/utils`) — чистые функции без side effects
+   - Схемы (`/schemas`) — Zod-схемы и TypeScript-типы
+
+4. **Дизайн-токены везде.** Никаких `#1A56DB` в JSX. Только `bg-primary`, `text-muted`, `status-danger-bg` и т.д.
+
+5. **Runtime-валидация Zod** для любого внешнего JSON (ответ LLM, конфиг сценария). Приложение никогда не падает с runtime TypeError.
+
+6. **API-ключ только в localStorage.** При отсутствии ключа — Settings Modal блокирует любые LLM-вызовы.
+
+7. **Self-documenting code.** Имена переменных и функций отражают суть. Комментарии только для неочевидной логики.
+
+---
+
+## РАЗДЕЛ 4: СТРУКТУРА РЕПОЗИТОРИЯ
+
+```
+/
+├── public/
+│   ├── scenarios/
+│   │   ├── contract_review.json        # Сценарий "Согласование договора"
+│   │   └── outgoing_letter.json        # Сценарий "Исходящее письмо"
+│   └── knowledge/
+│       ├── legal_policy.md             # Пример регламента: юридическая политика
+│       ├── fin_limits.md               # Пример регламента: финансовые лимиты
+│       └── regulator_rules.md          # Пример регламента: переписка с регуляторами
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx                         # Роутинг между Studio / Player / Settings
+│   ├── schemas/
+│   │   ├── llmResponse.ts              # Zod: структура ответа Gemini
+│   │   └── scenarioConfig.ts           # Zod: структура demo_scenario.json
+│   ├── store/
+│   │   └── appStore.ts                 # Zustand: весь глобальный стейт
+│   ├── hooks/
+│   │   ├── useLLMInference.ts          # Вызов Gemini API + retry + таймаут
+│   │   ├── usePlayerEngine.ts          # State Machine Плеера
+│   │   ├── useFileParser.ts            # mammoth.js + pdf.js парсинг
+│   │   └── useScenarioLoader.ts        # Загрузка и валидация JSON-конфига
+│   ├── utils/
+│   │   ├── promptCompiler.ts           # Сборка финального промпта из частей
+│   │   ├── artifactStore.ts            # In-memory хранилище артефактов сессии
+│   │   └── apiKeyManager.ts            # Чтение/запись ключа в localStorage
+│   ├── components/
+│   │   ├── Layout/
+│   │   │   ├── AppShell.tsx            # Обёртка: навбар + переключатель режимов
+│   │   │   └── SettingsModal.tsx       # Модалка ввода API-ключа
+│   │   ├── Studio/
+│   │   │   ├── StudioWorkspace.tsx     # Контейнер: три колонки
+│   │   │   ├── InputContextPanel.tsx   # Блок 1: плейсхолдеры из 1С
+│   │   │   ├── AIConfigPanel.tsx       # Блок 2: промпт + регламент + провайдер
+│   │   │   ├── OutputRulesPanel.tsx    # Блок 3: if-this-then-that правила
+│   │   │   ├── PlaceholderBadge.tsx    # "Пилюля" плейсхолдера
+│   │   │   ├── KnowledgeDropZone.tsx   # Drag-and-drop загрузка .md регламентов
+│   │   │   └── LiveTestPanel.tsx       # Загрузка файла + тест + результат
+│   │   ├── Player/
+│   │   │   ├── PlayerWorkspace.tsx     # Контейнер Плеера
+│   │   │   ├── ProcessMap.tsx          # SVG/div маршрут с узлами
+│   │   │   ├── DocumentMarker.tsx      # Анимированный маркер документа
+│   │   │   ├── ProcessNode.tsx         # Отдельный узел (стандартный / AI)
+│   │   │   ├── ResultModal.tsx         # Модалка результата работы LLM
+│   │   │   ├── MirrorModePanel.tsx     # Панель "Показать промпт" для ИБ
+│   │   │   ├── PlayerControls.tsx      # Кнопки Play/Pause/Reset
+│   │   │   └── ArtifactBadge.tsx       # Визуализация передаваемого артефакта
+│   │   └── ActionLibrary/
+│   │       ├── ActionLibrary.tsx       # Витрина действий
+│   │       └── ActionCard.tsx          # Карточка одного действия
+│   └── styles/
+│       └── globals.css
+├── tailwind.config.ts                  # Семантические токены (обязательно)
+├── tsconfig.json                       # strict: true
+├── vite.config.ts
+├── package.json
+└── README.md                           # Инструкция запуска
+```
+
+---
+
+## РАЗДЕЛ 5: ГЛОБАЛЬНЫЙ СТЕЙТ (appStore.ts)
+
+Полная структура Zustand store. Агент должен реализовать именно эту структуру:
+
+```typescript
+interface AppState {
+  // === РЕЖИМ ПРИЛОЖЕНИЯ ===
+  activeMode: 'studio' | 'player' | 'action-library';
+  setActiveMode: (mode: AppState['activeMode']) => void;
+
+  // === НАСТРОЙКИ ===
+  geminiApiKey: string | null;
+  setGeminiApiKey: (key: string) => void;
+  isSettingsOpen: boolean;
+  setSettingsOpen: (open: boolean) => void;
+
+  // === СТУДИЯ: активный кубик ===
+  activeCube: {
+    id: string;
+    title: string;
+    prompt: string;
+    knowledgeBase: string | null;     // текст загруженного .md файла
+    knowledgeBaseFileName: string | null;
+    placeholders: Placeholder[];
+    rules: ActionRule[];
+    selectedProvider: LLMProvider;
+  };
+  updateActiveCube: (patch: Partial<AppState['activeCube']>) => void;
+
+  // === ПЛЕЕР ===
+  playerState: PlayerState;           // State Machine (см. раздел 7)
+  currentScenario: Scenario | null;
+  artifacts: Record<string, string>;  // артефакты сессии: { key: value }
+  currentNodeIndex: number;
+  lastLLMResult: LLMResponse | null;
+
+  // Экшены плеера
+  loadScenario: (scenario: Scenario) => void;
+  startPlayer: () => void;
+  pausePlayer: () => void;
+  resumePlayer: () => void;
+  resetPlayer: () => void;
+  advanceToNextNode: () => void;
+  setPlayerState: (state: PlayerState) => void;
+  setLastLLMResult: (result: LLMResponse | null) => void;
+  setArtifact: (key: string, value: string) => void;
+
+  // === LIVE TEST (Студия) ===
+  testDocument: {
+    fileName: string | null;
+    extractedText: string | null;
+    isLoading: boolean;
+    result: LLMResponse | null;
+  };
+  setTestDocument: (patch: Partial<AppState['testDocument']>) => void;
+}
+```
+
+**Типы:**
+
+```typescript
+type PlayerState = 'IDLE' | 'ANIMATING' | 'WAITING_LLM' | 'SHOWING_RESULT' | 'PAUSED' | 'LLM_ERROR' | 'COMPLETED';
+
+type LLMProvider = 'gemini-flash' | 'gigachat' | 'local-llama';
+
+interface Placeholder {
+  key: string;        // например: "Сумма_договора"
+  displayName: string;
+  exampleValue: string;
+}
+
+interface ActionRule {
+  condition: 'severity_gte' | 'severity_lt' | 'always';
+  threshold?: number;
+  actionId: ActionId;
+}
+
+type ActionId = 'approve' | 'return_to_author' | 'escalate' | 'skip_node';
+```
+
+---
+
+## РАЗДЕЛ 6: ZOD-СХЕМЫ (src/schemas/)
+
+### llmResponse.ts
+
+```typescript
+import { z } from 'zod';
+
+export const LLMResponseSchema = z.object({
+  status: z.enum(['success', 'error', 'timeout']),
+  ai_analysis: z.object({
+    severity_score: z.number().min(0).max(10),
+    findings: z.array(z.string()),
+    artifact: z.string().optional(),
+  }),
+  execution_command: z.object({
+    action_id: z.enum(['approve', 'return_to_author', 'escalate', 'skip_node']),
+    comment_to_user: z.string(),
+  }),
+  time_saved_minutes: z.number().optional(),
+});
+
+export type LLMResponse = z.infer<typeof LLMResponseSchema>;
+```
+
+### scenarioConfig.ts
+
+```typescript
+import { z } from 'zod';
+
+const StandardNodeSchema = z.object({
+  type: z.literal('standard_node'),
+  step_id: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional(),
+  animation_delay_ms: z.number().default(1500),
+});
+
+const AINodeSchema = z.object({
+  type: z.literal('ai_node'),
+  step_id: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional(),
+  active_prompt: z.string(),
+  attached_knowledge_base: z.string().optional(),  // имя файла из /public/knowledge/
+  input_artifacts: z.array(z.string()).optional(),  // ключи артефактов для передачи в промпт
+  output_artifact_key: z.string().optional(),       // ключ под которым сохранить artifact из ответа
+  placeholders: z.record(z.string()).optional(),    // { "Сумма_договора": "1 500 000" }
+});
+
+export const ScenarioNodeSchema = z.discriminatedUnion('type', [
+  StandardNodeSchema,
+  AINodeSchema,
+]);
+
+export const ScenarioSchema = z.object({
+  scenario_id: z.string(),
+  scenario_name: z.string(),
+  document_mock: z.object({
+    file_name: z.string(),
+    extracted_text: z.string(),
+  }),
+  visual_pipeline: z.array(ScenarioNodeSchema),
+});
+
+export type Scenario = z.infer<typeof ScenarioSchema>;
+export type ScenarioNode = z.infer<typeof ScenarioNodeSchema>;
+export type AINode = z.infer<typeof AINodeSchema>;
+```
+
+---
+
+## РАЗДЕЛ 7: STATE MACHINE ПЛЕЕРА (usePlayerEngine.ts)
+
+Это самая критичная часть. Без строгой State Machine Плеер будет падать при ошибках LLM. Реализовать **точно по этой диаграмме:**
+
+```
+IDLE
+  │ (нажатие Play)
+  ▼
+ANIMATING ──────────────────────────────────────────┐
+  │ (маркер достиг standard_node)                   │
+  │ → пауза animation_delay_ms                       │
+  │ → снова ANIMATING                               │
+  │                                                  │
+  │ (маркер достиг ai_node)                         │
+  ▼                                                  │
+WAITING_LLM                                         │
+  │ (Gemini ответил, Zod валидация прошла)           │
+  ▼                                                  │
+SHOWING_RESULT                                      │
+  │ (пользователь нажал "Продолжить")               │
+  │ (action_id != 'return_to_author')               │
+  └──────────────────────────────────────────────────┘
+  │ (action_id == 'return_to_author')
+  │ → остаётся SHOWING_RESULT, кнопка "Завершить"
+  │
+  │ (все узлы пройдены)
+  ▼
+COMPLETED
+
+WAITING_LLM
+  │ (таймаут > 30 сек ИЛИ Zod ошибка)
+  ▼
+LLM_ERROR
+  │ (авто-переход через 3 сек)
+  └─→ ANIMATING (skip_node, продолжаем)
+
+Любое состояние кроме IDLE/COMPLETED
+  │ (нажатие Pause)
+  ▼
+PAUSED
+  │ (нажатие Resume)
+  └─→ предыдущее состояние
+
+Любое состояние
+  │ (нажатие Reset)
+  └─→ IDLE, currentNodeIndex = 0, artifacts = {}
+```
+
+**Реализация хука:**
+
+```typescript
+// hooks/usePlayerEngine.ts
+// Хук инкапсулирует логику переходов.
+// Компоненты только вызывают: startPlayer(), pausePlayer(), advanceToNextNode()
+// и подписываются на: playerState, currentNodeIndex, lastLLMResult
+
+// Внутри хука:
+// - useEffect следит за playerState и currentNodeIndex
+// - При ANIMATING + достижении ai_node → вызывает useLLMInference
+// - useLLMInference возвращает Promise<LLMResponse>
+// - Таймаут реализован через Promise.race([llmCall, timeout(30000)])
+// - При успехе → setPlayerState('SHOWING_RESULT')
+// - При ошибке → setPlayerState('LLM_ERROR') → setTimeout(3000) → ANIMATING skip
+```
+
+---
+
+## РАЗДЕЛ 8: МЕХАНИКА ВЫЗОВА LLM (useLLMInference.ts)
+
+### Сборка промпта (promptCompiler.ts)
+
+Финальный промпт собирается из 4 частей в строгом порядке:
+
+```
+[СИСТЕМНАЯ ИНСТРУКЦИЯ]
+Ты — AI-контролер документооборота. Твоя задача: проверить документ согласно корпоративному регламенту и вернуть результат СТРОГО в формате JSON без какого-либо текста до или после JSON.
+
+[РЕГЛАМЕНТ КОМПАНИИ]
+{текст из attached_knowledge_base .md файла, если есть}
+
+[КОНТЕКСТ ДОКУМЕНТА]
+Название документа: {document_mock.file_name}
+{значения плейсхолдеров из текущего узла}
+{артефакты от предыдущих кубиков, если есть в input_artifacts}
+
+[ТЕКСТ ДОКУМЕНТА]
+{document_mock.extracted_text или текст загруженного файла}
+
+[ЗАДАЧА]
+{active_prompt из конфига узла}
+
+[ФОРМАТ ОТВЕТА — СТРОГО JSON]
+{
+  "status": "success",
+  "ai_analysis": {
+    "severity_score": <число от 0 до 10>,
+    "findings": ["находка 1", "находка 2"],
+    "artifact": "<краткое саммари для следующего кубика, если нужно>"
+  },
+  "execution_command": {
+    "action_id": "<approve|return_to_author|escalate|skip_node>",
+    "comment_to_user": "<понятный комментарий для сотрудника>"
+  },
+  "time_saved_minutes": <число>
+}
+```
+
+### Вызов Gemini API
+
+```typescript
+// hooks/useLLMInference.ts
+
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+async function callGemini(prompt: string, apiKey: string): Promise<LLMResponse> {
+  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,      // низкая температура для стабильного JSON
+        maxOutputTokens: 2048,
+      },
+    }),
+  });
+
+  const data = await response.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+
+  // Очистка: убрать markdown-обёртку если модель добавила ```json
+  const cleaned = rawText.replace(/```json\n?|\n?```/g, '').trim();
+
+  // Zod-валидация
+  return LLMResponseSchema.parse(JSON.parse(cleaned));
+}
+
+// Обёртка с таймаутом и retry:
+export function useLLMInference() {
+  const apiKey = useAppStore(s => s.geminiApiKey);
+
+  const infer = useCallback(async (prompt: string): Promise<LLMResponse> => {
+    if (!apiKey) throw new Error('API key not set');
+
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT')), 30000)
+    );
+
+    try {
+      return await Promise.race([callGemini(prompt, apiKey), timeout]);
+    } catch (e) {
+      // Один retry при не-таймаутной ошибке
+      if (e instanceof Error && e.message !== 'TIMEOUT') {
+        return await Promise.race([callGemini(prompt, apiKey), timeout]);
+      }
+      throw e;
+    }
+  }, [apiKey]);
+
+  return { infer };
+}
+```
+
+---
+
+## РАЗДЕЛ 9: ДИЗАЙН-ТОКЕНЫ (tailwind.config.ts)
+
+**Обязателен полностью.** Никакого кода без этого файла:
+
+```typescript
+// tailwind.config.ts
+import type { Config } from 'tailwindcss';
+
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        // Поверхности
+        'surface':          '#FFFFFF',
+        'surface-elevated': '#F7F8FA',
+        'background':       '#EEF2F7',
+
+        // Бренд
+        'primary':          '#1A56DB',
+        'primary-dark':     '#1E3A5F',
+        'primary-light':    '#EBF4FF',
+
+        // Текст
+        'text-primary':     '#1A202C',
+        'text-secondary':   '#4A5568',
+        'text-muted':       '#718096',
+
+        // Границы
+        'border-default':   '#E2E8F0',
+        'border-focus':     '#1A56DB',
+
+        // Статусы
+        'status-success-bg':    '#C6F6D5',
+        'status-success-text':  '#276749',
+        'status-success-border':'#9AE6B4',
+
+        'status-warn-bg':       '#FEFCBF',
+        'status-warn-text':     '#744210',
+        'status-warn-border':   '#F6E05E',
+
+        'status-danger-bg':     '#FED7D7',
+        'status-danger-text':   '#C53030',
+        'status-danger-border': '#FC8181',
+
+        // AI-нода (особый стиль)
+        'ai-node-bg':       '#EBF4FF',
+        'ai-node-border':   '#1A56DB',
+        'ai-node-glow':     '#93C5FD',
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
+      boxShadow: {
+        'glass': '0 8px 32px rgba(0, 0, 0, 0.08)',
+        'modal': '0 20px 60px rgba(0, 0, 0, 0.15)',
+        'card-hover': '0 4px 20px rgba(26, 86, 219, 0.12)',
+      },
+      animation: {
+        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'scan': 'scan 1.5s ease-in-out infinite',
+      },
+    },
+  },
+  plugins: [],
+} satisfies Config;
+```
+
+---
+
+## РАЗДЕЛ 10: UI/UX СПЕЦИФИКАЦИЯ
+
+### Общий стиль
+
+- **Glassmorphism для модалок:** `bg-white/90 backdrop-blur-xl rounded-3xl shadow-modal`
+- **Мягкие тени:** никаких резких чёрных теней, только `shadow-glass` и `shadow-modal`
+- **Скругления:** `rounded-2xl` для карточек, `rounded-3xl` для модалок
+- **Микроинтеракции через Framer Motion:** все карточки реагируют на hover `scale: 1.02`, все модалки появляются через `fadeIn + slideUp`
+
+### AppShell (навигация)
+
+Верхняя панель с тремя вкладками:
+- `[⚙️ Студия]` — конфигуратор кубика
+- `[▶️ Плеер]` — запуск демо-сценария
+- `[📚 Библиотека действий]` — витрина доступных экшенов
+
+Правый угол: иконка шестерёнки → Settings Modal (ввод API-ключа).
+
+**Settings Modal:** первый запуск без ключа → автоматически открывается эта модалка. Содержит поле ввода API-ключа, ссылку на Google AI Studio для получения ключа, и кнопку "Сохранить".
+
+### Режим "Студия" — три колонки
+
+**Колонка 1: Входящий контекст (ширина ~25%)**
+
+- Заголовок: "Доступные переменные"
+- Список плейсхолдеров как интерактивные "пилюли" (badges)
+- При клике на пилюлю — вставляет `{{ключ}}` в позицию курсора в поле промпта
+- Стиль пилюли: `bg-primary-light text-primary rounded-full px-3 py-1 text-sm cursor-pointer hover:bg-primary hover:text-white transition-colors`
+- Под списком: раздел "Артефакты от предыдущих кубиков" (если есть)
+
+**Колонка 2: Настройка интеллекта (ширина ~50%)**
+
+- Секция "Регламент компании":
+  - Drag-and-drop зона: пунктирная граница, иконка, текст "Перетащите .md или .txt файл"
+  - При hover файла над зоной — фон меняется на `bg-primary-light`
+  - После загрузки — показывает имя файла и первые 100 символов + кнопка "Удалить"
+
+- Секция "Промпт":
+  - Большое поле textarea без рамок, с мягкой тенью при фокусе (`ring-2 ring-border-focus`)
+  - Плейсхолдер-подсказка: "Опишите задачу для AI-контролёра на естественном языке..."
+  - Вставленные переменные {{...}} подсвечиваются цветом `text-primary font-medium`
+
+- Секция "AI-провайдер":
+  - Выпадающий список с тремя опциями:
+    - `🌐 Google Gemini Flash (Облако — для демо)`
+    - `🇷🇺 Sber GigaChat (Облако РФ — для боевой среды)`
+    - `🔒 Local Llama 3 (On-Premise — защищённый контур)`
+  - При выборе второго или третьего — показывать тост "Для демо используется Gemini. Эти варианты доступны в боевой версии."
+
+**Колонка 3: Правила реакции (ширина ~25%)**
+
+- Заголовок: "Что делать с результатом"
+- Визуальный конструктор if-then:
+  - Trigger: слайдер "Критичность > N" (0–10)
+  - Action: выпадающий список действий из Библиотеки
+  - Кнопка "Добавить правило"
+  - Список добавленных правил с кнопкой удаления
+
+- Внизу колонки: кнопка "🧪 Протестировать" → открывает LiveTestPanel
+
+### Live Test Panel
+
+Появляется как боковая панель (drawer) справа при нажатии "Протестировать":
+- Зона загрузки файла (.docx или .pdf) с drag-and-drop
+- После загрузки: имя файла + размер
+- Кнопка "Запустить анализ" (активна только если есть промпт и API-ключ)
+- Состояние загрузки: анимированный индикатор + микро-статусы:
+  - "📄 Читаю документ..."
+  - "🧠 Анализирую содержание..."
+  - "⚡ Формирую вывод..."
+- Результат: компонент ResultModal в inline-варианте (не поверх страницы)
+
+### Режим "Плеер"
+
+**ProcessMap** — главная область:
+- Горизонтальная линия маршрута
+- На линии: узлы (прямоугольники с иконками)
+- Стандартные узлы: серые, иконка 👤 или 📋
+- AI-узлы: синие (`bg-ai-node-bg border-2 border-ai-node-border`), иконка 🤖
+- Между узлами: стрелки (SVG или CSS border)
+- Активный узел при прохождении: пульсирующая анимация + glow (`shadow-[0_0_20px_theme(colors.ai-node-glow)]`)
+
+**DocumentMarker** — анимированный объект:
+- Внешне: иконка документа 📄 в круглом контейнере
+- Движется по линии маршрута через Framer Motion `motion.div` с `animate={{ x: targetX }}`
+- При достижении AI-узла: меняет иконку на ⏳, пульсирует
+
+**PlayerControls**:
+- Кнопки: `[▶️ Запустить] [⏸️ Пауза] [🔄 Сбросить]`
+- Выбор сценария: dropdown с загруженными JSON-конфигами
+- При COMPLETED: показывает финальный экран (см. ниже)
+
+**Финальный экран (COMPLETED)**:
+- Большой заголовок: "✅ Процесс завершён"
+- Список всех пройденных кубиков с их результатами (цветные индикаторы)
+- Счётчик: "⏱️ Сэкономлено ~X минут ручной проверки" (сумма time_saved_minutes)
+- QR-код: библиотека `qrcode.react`, генерирует QR на текущий URL страницы
+- Кнопка "Запустить снова"
+
+### Result Modal
+
+Главный wow-элемент. Появляется поверх Плеера при SHOWING_RESULT.
+
+**Анимация появления:**
+```typescript
+// Framer Motion variants
+const modalVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
+  exit: { opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.2 } },
+};
+```
+
+**Оверлей:** `bg-black/40 backdrop-blur-sm`
+
+**Само окно:** `bg-white/95 backdrop-blur-xl rounded-3xl shadow-modal max-w-lg w-full mx-4`
+
+**Шапка модалки** (цвет зависит от action_id):
+- `approve` → `bg-status-success-bg` + "🟢 Проверка пройдена"
+- `escalate` → `bg-status-warn-bg` + "🟡 Требуется внимание"
+- `return_to_author` → `bg-status-danger-bg` + "🔴 Возврат на доработку"
+- `skip_node` → серая + "⚠️ AI недоступен, пропуск"
+
+**Тело модалки:**
+1. Крупно: принятое действие (например "Возврат автору")
+2. Список findings: каждая строка с иконкой ❌ или ⚠️
+3. Комментарий для пользователя (курсивом, серым)
+4. Счётчик времени если есть
+5. Кнопка "Показать промпт 👁" → разворачивает MirrorModePanel внизу модалки
+6. Кнопка действия: "Продолжить →" или "Завершить"
+
+**MirrorModePanel** (внутри модалки, раскрывается):
+- Показывает полный текст промпта отправленного в LLM
+- Заголовок: "🔍 Что именно отправлено в AI (для службы ИБ)"
+- Фон: `bg-surface-elevated rounded-xl p-4 font-mono text-sm`
+- Кнопка копировать
+
+### Библиотека действий
+
+Сетка карточек 2×N в стиле App Store.
+
+Карточки:
+- ↩️ **Возврат инициатору** — Вернуть документ автору с комментарием AI
+- 🚀 **Эскалация** — Передать задачу руководителю подразделения
+- ✅ **Автосогласование** — Перевести документ в статус "Согласовано AI"
+- 📝 **Запись в карточку** — Сохранить саммари AI в поле документа 1С
+- 💬 **Уведомление автору** — Отправить персональный совет по улучшению
+- 🔔 **Уведомление руководителю** — Алёртить начальника при критических рисках
+
+Каждая карточка: `hover:shadow-card-hover hover:scale-102 transition-all cursor-pointer`
+
+---
+
+## РАЗДЕЛ 11: КОНФИГУРАЦИОННЫЕ ФАЙЛЫ (создать в /public/scenarios/)
+
+### contract_review.json
+
+```json
+{
+  "scenario_id": "contract_review",
+  "scenario_name": "Согласование договора на закупку оборудования",
+  "document_mock": {
+    "file_name": "Договор_поставки_трансформаторов.docx",
+    "extracted_text": "ДОГОВОР ПОСТАВКИ №ТМГ-2026/041\n\nг. Екатеринбург, 15 февраля 2026 г.\n\nООО «Уралэнергосбыт» (далее — Покупатель) в лице Генерального директора Петрова А.В., действующего на основании Устава, с одной стороны, и ООО «ТехМашГрупп» (далее — Поставщик), ИНН 7453198234, в лице директора Кузнецова И.С., с другой стороны, заключили настоящий Договор о нижеследующем:\n\n1. ПРЕДМЕТ ДОГОВОРА\n1.1. Поставщик обязуется поставить трансформаторы масляные ТМГ-630 в количестве 5 (пять) штук.\n\n2. ЦЕНА И ПОРЯДОК РАСЧЁТОВ\n2.1. Общая стоимость Договора составляет 1 500 000 (один миллион пятьсот тысяч) рублей.\n2.2. Покупатель перечисляет аванс в размере 50% от суммы договора в течение 5 рабочих дней.\n2.3. Оставшаяся часть оплачивается после подписания акта приёмки.\n\n3. ОТВЕТСТВЕННОСТЬ СТОРОН\n3.1. В случае нарушения Поставщиком сроков поставки, он уплачивает пеню в размере 0,5% от стоимости Договора за каждый день просрочки.\n\n4. СРОК ДЕЙСТВИЯ\n4.1. Договор вступает в силу с момента подписания и действует до 31 декабря 2026 года."
+  },
+  "visual_pipeline": [
+    {
+      "type": "standard_node",
+      "step_id": "initiator",
+      "title": "Инициатор",
+      "subtitle": "Создание проекта договора",
+      "animation_delay_ms": 1500
+    },
+    {
+      "type": "ai_node",
+      "step_id": "spelling_check",
+      "title": "AI: Нормоконтроль",
+      "subtitle": "Орфография и реквизиты",
+      "active_prompt": "Проверь документ на орфографические ошибки и наличие всех обязательных реквизитов: ИНН контрагента, полное наименование сторон, предмет договора, сумма прописью. Если всё в порядке — верни action_id: approve. Если есть ошибки — return_to_author с перечнем.",
+      "output_artifact_key": "normcontrol_result"
+    },
+    {
+      "type": "ai_node",
+      "step_id": "legal_check",
+      "title": "AI: Пре-юрист",
+      "subtitle": "Анализ рисков и кабальных условий",
+      "active_prompt": "Проверь договор на соответствие корпоративной юридической политике. Особое внимание: размер пени (стандарт 0.1% в день, максимум 0.3%), наличие пункта о форс-мажоре, обязательная подсудность — Арбитражный суд Свердловской области. Если нарушений нет — approve. Если критичные нарушения (пени выше стандарта, нет форс-мажора) — escalate с детальным комментарием.",
+      "attached_knowledge_base": "legal_policy.md",
+      "input_artifacts": ["normcontrol_result"],
+      "output_artifact_key": "legal_risk_summary"
+    },
+    {
+      "type": "ai_node",
+      "step_id": "finance_check",
+      "title": "AI: Финконтроль",
+      "subtitle": "Проверка платёжных условий",
+      "active_prompt": "Проверь условия оплаты на соответствие финансовой политике компании. Максимальный аванс: 30% от суммы договора. Если аванс превышен — return_to_author с требованием скорректировать. Учти предыдущие проверки при формировании вывода.",
+      "attached_knowledge_base": "fin_limits.md",
+      "input_artifacts": ["normcontrol_result", "legal_risk_summary"]
+    },
+    {
+      "type": "standard_node",
+      "step_id": "legal_dept",
+      "title": "Юридический отдел",
+      "subtitle": "Ручная экспертиза (только стратегические риски)",
+      "animation_delay_ms": 2000
+    },
+    {
+      "type": "standard_node",
+      "step_id": "ceo_approval",
+      "title": "Генеральный директор",
+      "subtitle": "Подписание",
+      "animation_delay_ms": 1500
+    }
+  ]
+}
+```
+
+### outgoing_letter.json
+
+```json
+{
+  "scenario_id": "outgoing_letter",
+  "scenario_name": "Исходящее письмо в регулятор (ФАС / Ростехнадзор)",
+  "document_mock": {
+    "file_name": "Ответ_Ростехнадзор_исх_042.docx",
+    "extracted_text": "Исходящий № 042 от 20.02.2026\n\nРуководителю Уральского управления Ростехнадзора\nИванову П.С.\n\nУважаемый Пётр Сергеевич!\n\nВ ответ на Ваш запрос сообщаем, что все мероприятия по устранению нарушений, выявленных в ходе проверки, выполнены в полном объёме. Персонал прошёл внеплановый инструктаж по охране труда. Документация приведена в соответствие с требованиями.\n\nС уважением,\nГенеральный директор ООО «Уралэнергосбыт»\nПетров А.В."
+  },
+  "visual_pipeline": [
+    {
+      "type": "standard_node",
+      "step_id": "executor",
+      "title": "Исполнитель",
+      "subtitle": "Подготовка проекта ответа",
+      "animation_delay_ms": 1500
+    },
+    {
+      "type": "ai_node",
+      "step_id": "normcontrol",
+      "title": "AI: Нормоконтроль",
+      "subtitle": "Реквизиты и ссылка на предписание",
+      "active_prompt": "Проверь исходящее письмо по регламенту переписки с регуляторами. Обязательные элементы: ссылка на входящий номер предписания или запроса регулятора, дата входящего документа, полное наименование регулятора и ФИО адресата, исходящий номер и дата. Если хотя бы один элемент отсутствует — return_to_author с чётким указанием что добавить. Документ не может уйти на подпись без этих элементов.",
+      "attached_knowledge_base": "regulator_rules.md",
+      "output_artifact_key": "normcontrol_letter_result"
+    },
+    {
+      "type": "ai_node",
+      "step_id": "tone_check",
+      "title": "AI: Тон и суть",
+      "subtitle": "Анализ содержательности ответа",
+      "active_prompt": "Проверь: 1) Тональность письма — должна быть деловой, уважительной, без агрессии и уклончивости. 2) Содержательность — письмо должно давать прямые ответы на все пункты запроса, а не уходить от темы. 3) Если ответ содержит размытые формулировки типа 'меры приняты' без конкретики — это нарушение. Если всё хорошо — approve. Если есть проблемы — return_to_author.",
+      "input_artifacts": ["normcontrol_letter_result"]
+    },
+    {
+      "type": "standard_node",
+      "step_id": "head_sign",
+      "title": "Руководитель",
+      "subtitle": "Подписание и отправка",
+      "animation_delay_ms": 2000
+    }
+  ]
+}
+```
+
+---
+
+## РАЗДЕЛ 12: ПРИМЕР РЕГЛАМЕНТОВ (/public/knowledge/)
+
+### legal_policy.md
+
+```markdown
+# Корпоративная юридическая политика (выдержка для AI-контролёра)
+
+## Штрафные санкции и пени
+- Максимально допустимый размер пени: **0.3% в день** от суммы нарушения
+- Стандартный рекомендуемый размер: **0.1% в день**
+- Пени выше 0.3% — КРИТИЧЕСКОЕ нарушение, требует эскалации на старшего юриста
+- Взаимные пени (обе стороны несут ответственность) — рекомендованный формат
+
+## Обязательные пункты договора
+- Пункт о форс-мажоре (обстоятельства непреодолимой силы) — ОБЯЗАТЕЛЕН
+- Подсудность — только Арбитражный суд Свердловской области
+- Применимое право — законодательство РФ
+
+## Контрагенты
+- Проверка ИНН обязательна
+- Контрагенты из санкционных списков — автоматический отказ
+- Новые контрагенты без истории работы — повышенный контроль
+```
+
+### fin_limits.md
+
+```markdown
+# Политика финансового контроля (выдержка для AI-контролёра)
+
+## Лимиты авансирования
+- Максимальный аванс по договорам закупки: **30%** от суммы договора
+- Аванс 31-50% — требует согласования финансового директора
+- Аванс выше 50% — ЗАПРЕЩЁН без решения совета директоров
+
+## Пороги согласования по сумме
+- До 100 000 руб — руководитель подразделения
+- 100 001 — 500 000 руб — заместитель генерального директора
+- Свыше 500 000 руб — генеральный директор
+
+## График платежей
+- Рекомендуемая схема: 30% аванс + 70% по факту поставки
+- Отсрочка платежа по факту: не более 30 календарных дней
+```
+
+### regulator_rules.md
+
+```markdown
+# Регламент переписки с регуляторами (для AI-контролёра)
+
+## Обязательные реквизиты исходящего письма
+1. Ссылка на номер и дату входящего документа регулятора (предписания, запроса)
+2. Полное наименование регулятора и структурного подразделения
+3. ФИО и должность адресата
+4. Исходящий номер и дата письма компании
+
+## Требования к содержанию
+- Прямые ответы на каждый пункт запроса (без уклонений)
+- Конкретные факты: даты, ответственные лица, документальные подтверждения
+- Недопустимо: расплывчатые фразы "меры приняты", "работа ведётся" без деталей
+
+## Сроки
+- Ответ на предписание: не позднее срока, указанного в предписании
+- Ответ на запрос информации: 10 рабочих дней если не указан иной срок
+
+## Тональность
+- Деловой стиль, уважительное обращение
+- Не допускается: агрессия, споры о правомерности предписания (только факты)
+```
+
+---
+
+## РАЗДЕЛ 13: ПОРЯДОК РАЗРАБОТКИ (строго соблюдать последовательность)
+
+### Спринт 1: Фундамент (начать здесь)
+1. Инициализация проекта: `npm create vite@latest . -- --template react-ts`
+2. Установка зависимостей: `npm install zustand framer-motion zod @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-dropdown-menu lucide-react mammoth qrcode.react tailwindcss @tailwindcss/typography`
+3. Настройка `tailwind.config.ts` — полностью из Раздела 9
+4. Настройка `tsconfig.json` — `strict: true`
+5. Создать все Zod-схемы (`src/schemas/`)
+6. Создать Zustand store (`src/store/appStore.ts`) по структуре из Раздела 5
+7. Создать `apiKeyManager.ts` и `SettingsModal.tsx`
+8. Создать базовый `AppShell.tsx` с навигацией
+
+**Чекпоинт спринта 1:** `npm run dev` запускается без ошибок, видна навигация, SettingsModal открывается.
+
+### Спринт 2: Плеер (приоритет — это главное на питче)
+1. Создать `useScenarioLoader.ts` — загрузка и Zod-валидация JSON
+2. Загрузить оба JSON-сценария в `/public/scenarios/`
+3. Создать `ProcessMap.tsx` — статичная отрисовка маршрута из конфига
+4. Создать `ProcessNode.tsx` — стандартный и AI-узел с разными стилями
+5. Создать `DocumentMarker.tsx` — анимированный маркер
+6. Создать `usePlayerEngine.ts` — State Machine по диаграмме из Раздела 7
+7. Создать `PlayerControls.tsx` — кнопки и выбор сценария
+8. Создать `ResultModal.tsx` — полная спецификация из Раздела 10
+9. Создать `MirrorModePanel.tsx`
+10. Создать `ArtifactBadge.tsx`
+11. Собрать `PlayerWorkspace.tsx`
+
+**Чекпоинт спринта 2:** Плеер запускается, документ едет по маршруту, при достижении AI-узла делает реальный вызов Gemini (если есть ключ), появляется ResultModal.
+
+### Спринт 3: LLM-механика
+1. Создать `useFileParser.ts` — mammoth.js + pdf.js
+2. Создать `promptCompiler.ts` — сборка промпта из 4 частей (Раздел 8)
+3. Создать `useLLMInference.ts` — полная реализация из Раздела 8
+4. Создать `artifactStore.ts` — in-memory хранилище артефактов сессии
+5. Интегрировать LLM-логику в `usePlayerEngine.ts`
+
+**Чекпоинт спринта 3:** Цепочка кубиков работает, артефакт от кубика 1 передаётся в промпт кубика 2.
+
+### Спринт 4: Студия
+1. Создать `InputContextPanel.tsx` с PlaceholderBadge
+2. Создать `KnowledgeDropZone.tsx` с drag-and-drop
+3. Создать `AIConfigPanel.tsx` — промпт + регламент + провайдер
+4. Создать `OutputRulesPanel.tsx` — if-then конструктор
+5. Создать `LiveTestPanel.tsx` — тест с реальным файлом
+6. Собрать `StudioWorkspace.tsx`
+
+### Спринт 5: Полировка
+1. `ActionLibrary.tsx` + `ActionCard.tsx`
+2. Финальный экран COMPLETED с QR-кодом
+3. Адаптивность (min-width: 375px для мобильного просмотра)
+4. `README.md` с инструкцией запуска
+5. Финальный тест всех сценариев
+
+---
+
+## РАЗДЕЛ 14: КРИТЕРИИ ГОТОВНОСТИ (Definition of Done)
+
+Работа считается завершённой когда выполнено ВСЁ:
+
+- [ ] `npm install && npm run dev` запускается без ошибок и предупреждений
+- [ ] `npm run build` успешно создаёт production build
+- [ ] `tsc --noEmit` без ошибок, `any` в коде отсутствует
+- [ ] Ни один файл не превышает 350 строк
+- [ ] При первом открытии без API-ключа автоматически открывается SettingsModal
+- [ ] Оба сценария загружаются и запускаются в Плеере
+- [ ] При достижении AI-узла делается реальный вызов Gemini Flash
+- [ ] При таймауте LLM (>30 сек) Плеер переходит в LLM_ERROR и продолжает через 3 сек
+- [ ] Артефакт от кубика 1 (normcontrol_result) передаётся в промпт кубика 2
+- [ ] ResultModal появляется с правильным цветом шапки по action_id
+- [ ] MirrorModePanel показывает полный текст промпта отправленного в LLM
+- [ ] Live Test в Студии работает с реальным .docx файлом
+- [ ] Финальный экран COMPLETED показывает QR-код и суммарное время
+- [ ] На экране 390px (iPhone 14) всё отображается корректно
+- [ ] README.md содержит: клонирование, установку, получение API-ключа, запуск
+
+---
+
+## РАЗДЕЛ 15: ЧЕГО НЕ ДЕЛАТЬ
+
+- ❌ Не создавать бэкенд/сервер — всё в браузере
+- ❌ Не хранить API-ключ в коде, .env или репозитории
+- ❌ Не использовать `any` в TypeScript
+- ❌ Не писать файлы длиннее 350 строк
+- ❌ Не хардкодить HEX-цвета в компонентах — только токены из tailwind.config.ts
+- ❌ Не создавать "God components" которые делают всё сразу
+- ❌ Не пропускать Zod-валидацию для JSON от LLM
+- ❌ Не забывать про состояние LLM_ERROR в State Machine
+- ❌ Не делать PR без прохождения всех чекпоинтов спринта
+
+---
+
+## РАЗДЕЛ 16: ИНСТРУКЦИЯ АДАПТАЦИИ ПОД КЛИЕНТА (за 15 минут до питча)
+
+> Весь демо-контент намеренно вынесен в конфиги. Компоненты React **не содержат** названий компаний, имён, сумм и терминов. Чтобы переделать демо под нового клиента — редактируй только файлы из этого раздела. Код не трогается.
+
+---
+
+### Карта всех моковых данных: где лежит и что менять
+
+#### ФАЙЛ 1: `/public/scenarios/contract_review.json`
+
+| Поле | Текущее значение (УЭС) | Что подставить под клиента |
+|------|------------------------|---------------------------|
+| `scenario_name` | "Согласование договора на закупку оборудования" | Название процесса клиента |
+| `document_mock.file_name` | "Договор_поставки_трансформаторов.docx" | Реальное имя файла клиента |
+| `document_mock.extracted_text` | Текст договора с упоминанием УЭС, Петрова, ТехМашГрупп, ИНН 7453... | **Вставить реальный текст договора клиента** (или обезличенный) |
+| `visual_pipeline[].title` | "AI: Нормоконтроль", "AI: Пре-юрист" и т.д. | Названия этапов как они называются в 1С клиента |
+| `visual_pipeline[ai_node].active_prompt` | Содержит "Арбитражный суд Свердловской области", "0.1% в день" | Заменить на регламенты конкретного клиента |
+| `visual_pipeline[ai_node].placeholders` | Пример значений переменных | Реальные значения из документа клиента |
+
+#### ФАЙЛ 2: `/public/scenarios/outgoing_letter.json`
+
+| Поле | Текущее значение (УЭС) | Что подставить |
+|------|------------------------|----------------|
+| `scenario_name` | "Исходящее письмо в регулятор (ФАС / Ростехнадзор)" | Тип документа клиента |
+| `document_mock.extracted_text` | Письмо с "Уралэнергосбыт", "Петров А.В.", "Ростехнадзор" | Реальный черновик письма клиента |
+| `visual_pipeline[ai_node].active_prompt` | Упоминает специфику энергетического регулятора | Адаптировать под регулятора клиента |
+
+#### ФАЙЛ 3: `/public/knowledge/legal_policy.md`
+
+| Параметр | Текущее значение | Что заменить |
+|----------|-----------------|--------------|
+| Размер пени | 0.1% стандарт, 0.3% максимум | Реальный лимит из договорной политики клиента |
+| Подсудность | Арбитражный суд Свердловской области | Суд по месту регистрации клиента |
+| Особые условия | Общие | Реальные запреты из политики клиента |
+
+#### ФАЙЛ 4: `/public/knowledge/fin_limits.md`
+
+| Параметр | Текущее значение | Что заменить |
+|----------|-----------------|--------------|
+| Максимальный аванс | 30% | Реальный лимит клиента |
+| Пороги сумм согласования | 100к / 500к руб | Реальные пороги клиента |
+
+#### ФАЙЛ 5: `/public/knowledge/regulator_rules.md`
+
+| Параметр | Текущее значение | Что заменить |
+|----------|-----------------|--------------|
+| Сроки ответа | 10 рабочих дней | Реальные сроки из регламента клиента |
+| Специфика регулятора | Общая для энергетики | Специфика регулятора клиента |
+
+---
+
+### Добавить: `/public/client_config.json`
+
+Агент должен создать этот файл. Он содержит клиент-специфичные параметры которые используются в нескольких местах сразу — чтобы не менять одно и то же в пяти файлах:
+
+```json
+{
+  "client": {
+    "company_name": "ООО «Уралэнергосбыт»",
+    "company_short": "УЭС",
+    "ceo_name": "Петров А.В.",
+    "ceo_title": "Генеральный директор",
+    "city": "Екатеринбург",
+    "arbitration_court": "Арбитражный суд Свердловской области",
+    "industry": "энергосбыт"
+  },
+  "demo": {
+    "primary_process": "contract_review",
+    "show_qr": true,
+    "accent_color_override": null
+  },
+  "financial_limits": {
+    "max_advance_percent": 30,
+    "approval_threshold_1": 100000,
+    "approval_threshold_2": 500000,
+    "max_penalty_percent_per_day": 0.3,
+    "standard_penalty_percent_per_day": 0.1
+  },
+  "regulatory": {
+    "response_deadline_days": 10,
+    "primary_regulator": "Ростехнадзор"
+  }
+}
+```
+
+**Агент должен:** при загрузке приложения читать `client_config.json` и подставлять значения в промпты через `promptCompiler.ts`. Добавить в Zod-схемы:
+
+```typescript
+// schemas/clientConfig.ts
+export const ClientConfigSchema = z.object({
+  client: z.object({
+    company_name: z.string(),
+    company_short: z.string(),
+    ceo_name: z.string(),
+    ceo_title: z.string(),
+    city: z.string(),
+    arbitration_court: z.string(),
+    industry: z.string(),
+  }),
+  demo: z.object({
+    primary_process: z.string(),
+    show_qr: z.boolean(),
+    accent_color_override: z.string().nullable(),
+  }),
+  financial_limits: z.object({
+    max_advance_percent: z.number(),
+    approval_threshold_1: z.number(),
+    approval_threshold_2: z.number(),
+    max_penalty_percent_per_day: z.number(),
+    standard_penalty_percent_per_day: z.number(),
+  }),
+  regulatory: z.object({
+    response_deadline_days: z.number(),
+    primary_regulator: z.string(),
+  }),
+});
+
+export type ClientConfig = z.infer<typeof ClientConfigSchema>;
+```
+
+**Добавить в `promptCompiler.ts`:** перед отправкой промпта в LLM подставлять значения из `client_config.json` через плейсхолдеры `{{client.company_name}}`, `{{financial_limits.max_advance_percent}}` и т.д.
+
+---
+
+### Чеклист адаптации (15 минут до встречи с новым клиентом)
+
+**Шаг 1 (5 мин) — Данные клиента:**
+- [ ] Открыть `client_config.json`
+- [ ] Заменить `company_name`, `company_short`, `ceo_name`, `city`, `arbitration_court`
+- [ ] Уточнить `max_advance_percent` и пороги согласования
+
+**Шаг 2 (5 мин) — Документ для демо:**
+- [ ] Открыть `contract_review.json` → поле `document_mock.extracted_text`
+- [ ] Вставить реальный (или обезличенный) текст договора клиента
+- [ ] Обновить `document_mock.file_name` на узнаваемое название
+
+**Шаг 3 (5 мин) — Терминология процессов:**
+- [ ] В `visual_pipeline[].title` заменить названия этапов на те, что используются в 1С клиента
+- [ ] Если клиент работает с другим регулятором — обновить `outgoing_letter.json` и `regulator_rules.md`
+
+**Результат:** полностью персонализированное демо с именами, суммами и процессами конкретного клиента. Эффект узнавания на питче гарантирован.
+
+---
+
+### Что НИКОГДА не нужно менять под клиента
+
+- Код React-компонентов
+- Zustand store
+- Zod-схемы
+- Tailwind конфиг
+- Логика State Machine Плеера
+- Механика вызова Gemini API
+
+Это и есть ценность Config-Driven архитектуры.
+
+---
+
+## РАЗДЕЛ 17: РАСШИРЕННАЯ СХЕМА ОТВЕТА LLM И ПАНЕЛЬ ПРАВИЛ
+
+### Философия маршрутизации (обязательно к пониманию)
+
+**Неправильно:** LLM оценивает критичность → правило смотрит на число.
+**Правильно:** LLM описывает факты о документе → правила решают что делать с фактами.
+
+Это разделение ответственности. Модель не должна "решать" — она должна "описывать". Решение принимают правила, настроенные Владельцем процесса.
+
+---
+
+### Обновлённая Zod-схема (заменяет LLMResponseSchema из Раздела 6)
+
+```typescript
+// src/schemas/llmResponse.ts — ПОЛНАЯ ВЕРСИЯ
+
+import { z } from 'zod';
+
+// Типы рисков — расширяемый список
+export const RiskTypeSchema = z.enum([
+  'юридический',
+  'финансовый',
+  'репутационный',
+  'операционный',
+  'регуляторный',
+]);
+
+// Категории документов — расширяемый список
+export const DocumentCategorySchema = z.enum([
+  'договор_закупки',
+  'договор_услуг',
+  'договор_аренды',
+  'исходящее_письмо',
+  'входящее_письмо',
+  'заявка',
+  'приказ',
+  'иное',
+]);
+
+// Одна находка с типом и признаком блокера
+export const FindingSchema = z.object({
+  type: RiskTypeSchema,
+  text: z.string(),
+  blocking: z.boolean(),
+});
+
+// Профиль документа — что LLM определила
+export const DocumentProfileSchema = z.object({
+  category: DocumentCategorySchema,
+  risk_types: z.array(RiskTypeSchema),
+  confidence: z.number().min(0).max(1),
+});
+
+// Анализ — факты, не оценки
+export const AnalysisSchema = z.object({
+  severity_score: z.number().min(0).max(10),
+  violations_count: z.number().min(0),
+  has_blocking_issue: z.boolean(),
+  // Булевы проверки — динамический набор, ключи задаются в конфиге кубика
+  boolean_checks: z.record(z.boolean()),
+  findings: z.array(FindingSchema),
+  artifact: z.string().optional(),
+});
+
+// Полный ответ
+export const LLMResponseSchema = z.object({
+  status: z.enum(['success', 'error', 'timeout']),
+  document_profile: DocumentProfileSchema,
+  analysis: AnalysisSchema,
+  execution_command: z.object({
+    action_id: z.enum(['approve', 'return_to_author', 'escalate', 'skip_node']),
+    comment_to_user: z.string(),
+  }),
+  time_saved_minutes: z.number().optional(),
+});
+
+export type LLMResponse = z.infer<typeof LLMResponseSchema>;
+export type Finding = z.infer<typeof FindingSchema>;
+export type DocumentProfile = z.infer<typeof DocumentProfileSchema>;
+```
+
+---
+
+### Расширенная схема правила маршрутизации
+
+```typescript
+// В src/store/appStore.ts — заменить тип ActionRule
+
+export type RuleMetric =
+  | 'severity_score'
+  | 'violations_count'
+  | 'has_blocking_issue'
+  | 'document_category'
+  | 'risk_type_present'
+  | 'confidence'
+  | 'boolean_check';   // ссылка на ключ из boolean_checks
+
+export type RuleOperator =
+  | 'gte'   // >=
+  | 'lte'   // <=
+  | 'gt'    // >
+  | 'lt'    // <
+  | 'eq'    // =
+  | 'neq'   // !=
+  | 'is_true'   // для булевых
+  | 'is_false'; // для булевых
+
+export interface ActionRule {
+  id: string;                    // uuid для key в React
+  metric: RuleMetric;
+  operator: RuleOperator;
+  // Одно из трёх в зависимости от типа метрики:
+  threshold_number?: number;     // для severity, violations, confidence
+  threshold_string?: string;     // для category, risk_type
+  boolean_check_key?: string;    // для boolean_check — ключ из boolean_checks
+  action_id: ActionId;
+  // Для комбинирования правил:
+  combine_with_next?: 'AND' | 'OR';
+}
+```
+
+---
+
+### Булевы проверки — конфигурация в кубике
+
+Владелец процесса добавляет их в интерфейсе. Каждая проверка — это пара (ключ, человекочитаемое название):
+
+```typescript
+export interface BooleanCheck {
+  key: string;            // 'has_force_majeure' — используется в промпте и правилах
+  label: string;          // 'Есть пункт о форс-мажоре' — показывается в UI
+  expected_in_doc: boolean; // true = проверяем наличие, false = проверяем отсутствие
+}
+```
+
+В конфиге кубика (`AINode`) добавить поле:
+```typescript
+boolean_checks_config: z.array(z.object({
+  key: z.string(),
+  label: z.string(),
+  expected_in_doc: z.boolean(),
+})).optional(),
+```
+
+Агент при компиляции промпта автоматически добавляет в инструкцию по формату ответа все ключи из `boolean_checks_config`. LLM обязана вернуть значение для каждого ключа.
+
+---
+
+### Обновлённый promptCompiler.ts — инструкция формата ответа
+
+Секция `[ФОРМАТ ОТВЕТА]` теперь генерируется динамически на основе активных правил и boolean_checks_config:
+
+```typescript
+function buildFormatInstruction(node: AINode): string {
+  const booleanChecksExample = (node.boolean_checks_config ?? [])
+    .map(c => `      "${c.key}": true_or_false`)
+    .join(',\n');
+
+  return `
+[ФОРМАТ ОТВЕТА — СТРОГО JSON, никакого текста до или после]
+{
+  "status": "success",
+  "document_profile": {
+    "category": "договор_закупки | исходящее_письмо | заявка | иное",
+    "risk_types": ["юридический", "финансовый"],
+    "confidence": 0.0_to_1.0
+  },
+  "analysis": {
+    "severity_score": 0_to_10,
+    "violations_count": число,
+    "has_blocking_issue": true_or_false,
+    "boolean_checks": {
+${booleanChecksExample || '      // нет булевых проверок для этого кубика'}
+    },
+    "findings": [
+      { "type": "юридический|финансовый|репутационный", "text": "описание", "blocking": true_or_false }
+    ],
+    "artifact": "краткое саммари для следующего кубика"
+  },
+  "execution_command": {
+    "action_id": "approve | return_to_author | escalate | skip_node",
+    "comment_to_user": "понятный комментарий для сотрудника на русском"
+  },
+  "time_saved_minutes": число
+}`;
+}
+```
+
+---
+
+### Обновлённый OutputRulesPanel — спецификация компонента
+
+Компонент `OutputRulesPanel.tsx` должен поддерживать выбор метрики из расширенного списка.
+
+**Логика рендеринга поля значения** зависит от выбранной метрики:
+
+| Метрика | Оператор | Поле значения |
+|---------|----------|---------------|
+| `severity_score` | gt / lt / gte / lte | number input (0–10) |
+| `violations_count` | gt / lt / gte / lte | number input |
+| `confidence` | gt / lt | number input (0.0–1.0, шаг 0.1) |
+| `has_blocking_issue` | is_true / is_false | нет поля (оператор = значение) |
+| `document_category` | eq / neq | dropdown из DocumentCategorySchema |
+| `risk_type_present` | eq | dropdown из RiskTypeSchema |
+| `boolean_check` | is_true / is_false | dropdown из boolean_checks_config кубика |
+
+**Метки для UI (русские названия метрик):**
+```typescript
+export const METRIC_LABELS: Record<RuleMetric, string> = {
+  severity_score:      '🔴 Критичность',
+  violations_count:    '📋 Кол-во нарушений',
+  has_blocking_issue:  '🚫 Есть блокер',
+  document_category:   '📄 Категория документа',
+  risk_type_present:   '⚠️ Тип риска',
+  confidence:          '🤖 Уверенность AI',
+  boolean_check:       '✅ Булева проверка',
+};
+
+export const OPERATOR_LABELS: Record<RuleOperator, string> = {
+  gte: '≥', lte: '≤', gt: '>', lt: '<',
+  eq: '=', neq: '≠',
+  is_true: 'Да (истина)',
+  is_false: 'Нет (ложь)',
+};
+```
+
+---
+
+### Компонент "Конструктор промпта" (PromptBuilder Modal)
+
+Новый компонент `PromptBuilderModal.tsx`. Открывается кнопкой **"🔧 Конструктор"** рядом с полем промпта в AIConfigPanel.
+
+**Три зоны в одном модальном окне (три колонки):**
+
+**Колонка 1 — "Системная инструкция" (read-only)**
+- Показывает автогенерируемую часть промпта: контекст + регламент + формат JSON
+- Заголовок: "Что система добавляет автоматически"
+- Стиль: `bg-surface-elevated font-mono text-sm text-text-muted`
+- Поля из `boolean_checks_config` подсвечены `text-primary`
+
+**Колонка 2 — "Твоя задача" (редактируемое)**
+- Textarea — то же поле промпта что в основном интерфейсе
+- Подсказка: "Опишите ЧТО проверять. Не нужно описывать формат ответа — система делает это автоматически."
+- Примеры быстрой вставки (chips): "Проверь пени", "Найди риски", "Сверь с регламентом"
+
+**Колонка 3 — "Пример ответа LLM" (live preview)**
+- JSON с синтаксической подсветкой (библиотека `react-syntax-highlighter` или простая самописная)
+- Поля которые используются в активных правилах → `text-primary font-bold`
+- Поля которые не используются ни в одном правиле → `text-muted`
+- Кнопка "Запустить живой тест" → открывает LiveTestPanel с текущим промптом
+- Заголовок над секцией boolean_checks: "Эти ответы зависят от твоих булевых проверок ↑"
+
+**Кнопка "Применить и закрыть"** — сохраняет промпт в store и закрывает модалку.
+
+---
+
+### Обновить Definition of Done (добавить к Разделу 14)
+
+- [ ] OutputRulesPanel поддерживает все 7 метрик с правильными полями значений
+- [ ] PromptBuilderModal открывается и показывает три колонки
+- [ ] Поля JSON в примере ответа подсвечиваются в зависимости от активных правил
+- [ ] Булевы проверки добавляются через UI и автоматически появляются в системной инструкции промпта
+- [ ] При выборе метрики `boolean_check` в правиле — dropdown показывает только те ключи которые добавлены в boolean_checks_config кубика
+
+---
+
+## РАЗДЕЛ 18: УХО-ДРУЖЕЛЮБНОСТЬ БУЛЕВЫХ ПРОВЕРОК (UI Fix)
+
+### Проблема
+
+Поле "Ключ (напр. has_stamp)" требует от нетехнического пользователя знать snake_case. Это нарушает принцип No-Code.
+
+### Решение: автогенерация ключа из названия
+
+Пользователь вводит **только одно поле** — человекочитаемое название на русском. Ключ генерируется автоматически и скрыт.
+
+```typescript
+// utils/keyGenerator.ts
+const TRANSLITMAP: Record<string, string> = {
+  а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',
+  й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',
+  у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',
+  ь:'',э:'e',ю:'yu',я:'ya',' ':'_'
+};
+
+export function generateBooleanKey(label: string): string {
+  const transliterated = label
+    .toLowerCase()
+    .split('')
+    .map(c => TRANSLITMAP[c] ?? c)
+    .join('')
+    .replace(/[^a-z0-9_]/g, '')
+    .replace(/_+/g, '_')
+    .slice(0, 30);
+  return `has_${transliterated}`;
+}
+
+// Примеры:
+// "Есть печать"          → has_est_pechat
+// "Форс-мажор указан"    → has_fors_mazhor_ukazan
+// "Подпись директора"    → has_podpis_direktora
+```
+
+### Обновлённый UI компонента BooleanCheckRow
+
+```
+┌─────────────────────────────────────────┬───┐
+│  Название проверки (на русском)         │ + │
+│  напр. "Есть пункт о форс-мажоре"       │   │
+└─────────────────────────────────────────┴───┘
+```
+
+Только одно поле. После ввода и нажатия `+` — проверка появляется в списке как badge:
+
+```
+[✅ Есть пункт о форс-мажоре  ×]  [✅ Есть печать  ×]
+```
+
+Ключ (`has_est_punkt_o_fors_mazhore`) существует только внутри store и промпта — пользователь его никогда не видит.
+
+### Откуда берётся список в правилах
+
+В `OutputRulesPanel` при выборе метрики `boolean_check` — dropdown показывает список добавленных проверок **по их человекочитаемым названиям**:
+
+```
+Если  [Булева проверка ▾]  [= ▾]  [Есть форс-мажор ▾]
+                                   Есть форс-мажор  ← берётся из добавленных
+                                   Есть печать
+                                   Подпись директора
+```
+
+Не технические ключи — только названия которые пользователь сам и написал.
+
+### Добавить в Definition of Done
+
+- [ ] Поле "Ключ" убрано из UI булевых проверок полностью
+- [ ] Ключ генерируется автоматически через `generateBooleanKey()`
+- [ ] В правилах маршрутизации dropdown булевых проверок показывает человекочитаемые названия
+- [ ] При наведении на badge булевой проверки — тултип показывает сгенерированный ключ (для отладки)
+
+---
+
+## РАЗДЕЛ 19: МАТРИЦА МЕТРИКА → ОПЕРАТОРЫ (критический фикс UI)
+
+### Проблема
+
+Операторы `≥ ≤ > <` показываются для всех метрик включая категориальные и булевы. "Тип риска ≤ Финансовый" — логически бессмысленно. Это баг UX который нужно исправить на уровне компонента.
+
+### Решение: жёсткая привязка операторов к типу метрики
+
+```typescript
+// utils/ruleOperators.ts
+
+export type MetricValueType = 'numeric' | 'categorical' | 'boolean';
+
+export const METRIC_VALUE_TYPE: Record<RuleMetric, MetricValueType> = {
+  severity_score:     'numeric',
+  violations_count:   'numeric',
+  confidence:         'numeric',
+  document_category:  'categorical',
+  risk_type_present:  'categorical',
+  has_blocking_issue: 'boolean',
+  boolean_check:      'boolean',
+};
+
+// Допустимые операторы для каждого типа
+export const OPERATORS_BY_TYPE: Record<MetricValueType, RuleOperator[]> = {
+  numeric:     ['gt', 'lt', 'gte', 'lte', 'eq'],
+  categorical: ['eq', 'neq'],
+  boolean:     ['is_true', 'is_false'],
+};
+
+// Человекочитаемые метки операторов
+export const OPERATOR_LABELS: Record<RuleOperator, string> = {
+  gt:       '> больше',
+  lt:       '< меньше',
+  gte:      '≥ не меньше',
+  lte:      '≤ не больше',
+  eq:       '= равно',
+  neq:      '≠ не равно',
+  is_true:  '✅ Да (истина)',
+  is_false: '❌ Нет (ложь)',
+};
+```
+
+### Логика рендеринга RuleRow компонента
+
+```typescript
+// components/Studio/RuleRow.tsx
+
+function RuleRow({ rule, onChange }) {
+  const valueType = METRIC_VALUE_TYPE[rule.metric];
+  const allowedOperators = OPERATORS_BY_TYPE[valueType];
+
+  return (
+    <div>
+      {/* Если/Когда */}
+      <MetricDropdown value={rule.metric} onChange={...} />
+
+      {/* Оператор — показывать только если не boolean */}
+      {valueType !== 'boolean' && (
+        <OperatorDropdown
+          options={allowedOperators}   // только допустимые для этой метрики
+          value={rule.operator}
+          onChange={...}
+        />
+      )}
+
+      {/* Поле значения — зависит от типа */}
+      {valueType === 'numeric' && (
+        <NumberInput value={rule.threshold_number} onChange={...} />
+      )}
+      {valueType === 'categorical' && rule.metric === 'document_category' && (
+        <CategoryDropdown value={rule.threshold_string} onChange={...} />
+      )}
+      {valueType === 'categorical' && rule.metric === 'risk_type_present' && (
+        <RiskTypeDropdown value={rule.threshold_string} onChange={...} />
+      )}
+      {valueType === 'boolean' && rule.metric === 'boolean_check' && (
+        <BooleanCheckDropdown   // список добавленных булевых проверок
+          value={rule.boolean_check_key}
+          onChange={...}
+        />
+      )}
+      {valueType === 'boolean' && (
+        // Для boolean метрик оператор — это просто тумблер Да/Нет
+        <BooleanToggle
+          value={rule.operator === 'is_true'}
+          onChange={(v) => onChange({ operator: v ? 'is_true' : 'is_false' })}
+        />
+      )}
+
+      {/* То */}
+      <ActionDropdown value={rule.action_id} onChange={...} />
+    </div>
+  );
+}
+```
+
+### Итоговый вид каждого типа правила в UI
+
+**Числовое:**
+```
+Если  [🔴 Критичность ▾]  [> больше ▾]  [5]
+То    [🚀 Эскалировать ▾]
+```
+
+**Категориальное:**
+```
+Если  [⚠️ Тип риска ▾]  [= равно ▾]  [Финансовый ▾]
+То    [💬 Уведомить CFO ▾]
+```
+
+**Булево — с тумблером:**
+```
+Если  [✅ Булева проверка ▾]  [Есть форс-мажор ▾]  [● Нет]
+То    [🚀 Эскалировать ▾]
+```
+
+**Булево — has_blocking_issue:**
+```
+Если  [🚫 Есть блокер ▾]  [● Да]
+То    [↩️ Вернуть автору ▾]
+```
+
+### При смене метрики — сброс оператора и значения
+
+Когда пользователь меняет метрику с числовой на категориальную — оператор и значение сбрасываются:
+
+```typescript
+function handleMetricChange(newMetric: RuleMetric) {
+  const newType = METRIC_VALUE_TYPE[newMetric];
+  const defaultOperator = OPERATORS_BY_TYPE[newType][0]; // первый допустимый
+  onChange({
+    metric: newMetric,
+    operator: defaultOperator,
+    threshold_number: undefined,
+    threshold_string: undefined,
+    boolean_check_key: undefined,
+  });
+}
+```
+
+### Добавить в Definition of Done
+
+- [ ] При выборе категориальной метрики (Тип риска, Категория) в dropdown операторов доступны ТОЛЬКО `= / ≠`
+- [ ] При выборе булевой метрики (Есть блокер, Булева проверка) оператор-dropdown скрыт, вместо него тумблер Да/Нет
+- [ ] При смене метрики оператор и значение сбрасываются до дефолтных для нового типа
+- [ ] Числовые поля имеют валидацию диапазона (severity 0–10, confidence 0.0–1.0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ПАТЧ 1
+
+Идея с «Запустить БП» (подпроцесс) — отличная! В 1С:ДО и Bitrix24 это супер-популярный сценарий (например, если найден налоговый риск — запустить параллельный процесс проверки контрагента, не останавливая основной договор).
+То, что ты подметил про «Согласовать» — это фундаментальный сдвиг. AI не согласует. AI дает экспертное заключение (светофор), а дальше срабатывает настроенная тобой логика (триггеры).
+Вот готовый патч. Просто скопируй блок ниже и отдай модели (в Google AI Studio или Cursor) с текстом: "Вот патч-обновление к ТЗ. Учти эти изменения в архитектуре действий."
+Markdown
+
+# PATCH-ОБНОВЛЕНИЕ ТЗ: АРХИТЕКТУРА ДЕЙСТВИЙ (Action Catalog)> **ВНИМАНИЕ ДЛЯ AI-АГЕНТА:** Этот патч заменяет и уточняет логику действий (Actions) из предыдущих разделов ТЗ. Использовать эти данные при проектировании Zod-схем и UI-компонентов.## 1. ФИЛОСОФИЯ ДЕЙСТВИЙ (Почему убран 'approve')
+AI-Кубик **не принимает юридических решений** и ничего не "согласовывает". Он работает как контролёр. Следовательно, действие `approve` заменяется на `continue_process` (зеленый свет, пропустить дальше по маршруту). 
+
+Все доступные действия делятся на 2 категории:1. **Управление маршрутом** (Куда документ пойдет дальше).2. **Обогащение данных** (Что система запишет или запустит параллельно, не прерывая основной маршрут).## 2. ПОЛНЫЙ КАТАЛОГ ДЕЙСТВИЙ (Action Types)
+
+В системе платформы (в Библиотеке действий и в выпадающих списках правил `OutputRulesPanel`) должны быть доступны следующие типы действий:**Движение по маршруту:**1. `continue_process` (Пропустить дальше) — Ошибок нет или они не критичны. Документ едет к следующему человеку.2. `return_to_author` (Вернуть инициатору) — Жесткий стоп. Возврат на этап доработки с прикреплением комментариев AI.3. `escalate` (Эскалировать) — Смена маршрута. Передача документа на уровень выше (руководителю) из-за найденных рисков.4. `skip_node` (Пропустить узел) — Системное действие при таймауте LLM.**Обогащение и триггеры (без остановки процесса):**5. `add_comment` (Записать комментарий) — Документ идет дальше, но AI оставляет запись в таймлайне/истории документа (например: "Обратите внимание на пункт 4.1").6. `start_subprocess` (Запустить БП) — Триггер нового бизнес-процесса в 1С/Bitrix24 (требует ввода ID процесса в настройках правила).7. `set_field` (Изменить поле) — Запись значения в конкретное поле карточки (например, установить флаг "Высокий риск").## 3. ОБНОВЛЕНИЕ ZOD-СХЕМ (src/schemas/llmResponse.ts)
+
+LLM должна возвращать обновленные `action_id`. Замени старый `execution_command` в `LLMResponseSchema` на этот:```typescript
+export const ActionIdSchema = z.enum([
+  'continue_process',
+  'return_to_author',
+  'escalate',
+  'add_comment',
+  'start_subprocess',
+  'set_field',
+  'skip_node'
+]);
+
+export type ActionId = z.infer<typeof ActionIdSchema>;
+
+// Внутри LLMResponseSchema:
+execution_command: z.object({
+  action_id: ActionIdSchema,
+  comment_to_user: z.string(),
+  // Опциональные параметры, которые LLM может вернуть, если правило требует
+  target_process_id: z.string().optional(), // для start_subprocess
+  target_field_name: z.string().optional(), // для set_field
+  target_field_value: z.string().optional() // для set_field
+}),
+4. ОБНОВЛЕНИЕ UI ПРАВИЛ (OutputRulesPanel)
+Когда пользователь настраивает блок "То [Действие]" (в RuleRow.tsx), UI должен адаптироваться под выбранное действие:
+Если выбрано Запустить БП (start_subprocess) → рядом появляется текстовое поле ввода [ ID процесса (напр. BP-123) ].
+Если выбрано Изменить поле (set_field) → появляются два поля: [ Имя поля ] и [ Значение ].
+Для остальных действий (continue_process, return_to_author, escalate, add_comment) дополнительных полей не требуется.
+Метки для UI (Перевод для выпадающих списков):
+TypeScript
+
+export const ACTION_LABELS: Record<ActionId, string> = {
+  continue_process: '✅ Пропустить дальше',
+  return_to_author: '↩️ Вернуть автору',
+  escalate:         '🚀 Эскалировать',
+  add_comment:      '💬 Оставить комментарий',
+  start_subprocess: '⚙️ Запустить БП',
+  set_field:        '📝 Изменить поле карточки',
+  skip_node:        '⚠️ Системный пропуск'
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ПАТЧ 2
+Вот готовое, строгое Техническое Задание (ТЗ) на разработку раздела «Действия». Оно написано на языке разработчиков, учитывает наши архитектурные стандарты (Tailwind, shadcn/ui, Zod) и идеально ложится под переданный тобой JSON с кейсами.
+
+Копируй этот блок и отдавай в разработку вместе с JSON-файлом!
+
+---
+
+# ТЗ: Разработка раздела «Действия» (Actions Module)
+
+## 1. Контекст и задача
+
+Необходимо разработать новый корневой раздел интерфейса Платформы.
+
+* **Старое название в навигации:** «Библиотека действий».
+* **Новое название в навигации:** «Действия» (иконка `Zap` или `Workflow` из Lucide-react).
+* **Суть обновления:** Раздел перестает быть просто справочником кнопок и становится обучающим хабом. Он делится на две вкладки: статический каталог доступных команд (для понимания возможностей) и интерактивный каталог бизнес-кейсов (для обучения пользователей).
+
+## 2. Архитектура компонента (`ActionsView.tsx`)
+
+Корневой компонент должен использовать `Tabs` (из `shadcn/ui` или Radix UI) для переключения между двумя экранами.
+
+**Структура шапки:**
+
+* **Заголовок (H1):** Действия AI-контролёра
+* **Подзаголовок:** Настройте реакции системы на найденные риски или изучите готовые сценарии автоматизации.
+* **Переключатель (TabsList):**
+* `[ Библиотека действий ]` (value="library")
+* `[ Кейсы и практики ]` (value="cases")
+
+
+
+---
+
+## 3. Спецификация Вкладки 1: «Библиотека действий» (Tab: Library)
+
+**UI-лейаут:**
+Сетка карточек `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`.
+
+**Карточка действия (ActionCard.tsx):**
+Каждая карточка описывает одну из команд, доступных в системе. Отрисовывается в стиле Glassmorphism (`bg-surface/90 backdrop-blur-md hover:shadow-card-hover transition-all border border-border-default hover:border-border-focus`).
+
+**Данные для рендера (строго этот список, никаких "Согласований"):**
+
+1. **Пропустить дальше** (`continue_process`)
+* *Иконка:* `CheckCircle` (Зеленая)
+* *Описание:* Ошибок нет или они не критичны. Документ едет к следующему человеку по стандартному маршруту.
+
+
+2. **Вернуть автору** (`return_to_author`)
+* *Иконка:* `Undo2` (Красная)
+* *Описание:* Жесткий стоп. Возврат документа на этап доработки с прикреплением списка ошибок от AI.
+
+
+3. **Эскалировать** (`escalate`)
+* *Иконка:* `Rocket` (Оранжевая/Желтая)
+* *Описание:* Смена маршрута. Принудительная передача документа руководителю из-за найденных высоких рисков.
+
+
+4. **Оставить комментарий** (`add_comment`)
+* *Иконка:* `MessageSquare` (Синяя)
+* *Описание:* Документ не останавливается, но AI оставляет запись с советом в истории/таймлайне согласования.
+
+
+5. **Запустить БП** (`start_subprocess`)
+* *Иконка:* `GitBranch` (Фиолетовая)
+* *Описание:* Фоновый триггер нового бизнес-процесса в СЭД (например, параллельная проверка СБ).
+
+
+6. **Изменить поле карточки** (`set_field`)
+* *Иконка:* `Edit3` (Индиго)
+* *Описание:* Запись извлеченного AI значения (сумма, дата, тег риска) в системное поле документа.
+
+
+7. **Системный пропуск** (`skip_node`)
+* *Иконка:* `AlertTriangle` (Серая)
+* *Описание:* Техническое действие. Применяется при таймауте LLM, чтобы не блокировать движение документа.
+
+
+
+---
+
+## 4. Спецификация Вкладки 2: «Кейсы и практики» (Tab: Cases)
+
+Эта вкладка рендерится **исключительно** на основе входящего файла `action_cases.json`. Никакого хардкода текстов в компонентах.
+
+**UI-лейаут:**
+Разделенный экран (Split View).
+
+* **Левая колонка (Sidebar, ширина 1/3):** Список групп кейсов. Навигационное меню.
+* **Правая колонка (Content Area, ширина 2/3):** Карточки кейсов выбранной группы. Скроллируемая область (`ScrollArea`).
+
+### 4.1. Левая колонка (Навигация по группам)
+
+* Отрисовать меню на основе `group_title` и `icon` из JSON.
+* Выбранный пункт меню должен иметь активное состояние (`bg-primary-light text-primary font-medium`).
+* Под названием группы выводить `description` мелким серым шрифтом (`text-xs text-text-muted mt-1`).
+
+### 4.2. Правая колонка (Рендер карточек кейсов)
+
+Каждый объект в массиве `cases` отрисовывается как отдельный компонент `CaseCard.tsx`.
+
+**Структура `CaseCard.tsx`:**
+
+* **Шапка:** `title` (H3, крупно, `text-text-primary`).
+* **Блок "Проблема" (Problem):**
+* Лейбл: *Ситуация:*
+* Текст из поля `problem` (`text-sm text-text-secondary`).
+
+
+* **Блок "Настройка маршрутизатора" (Setup):**
+* Выделенный блок (фон `bg-surface-elevated rounded-md p-3 font-mono text-sm border-l-4 border-primary`).
+* Текст из поля `setup`.
+
+
+* **Блок "Используемые действия" (Actions Badges):**
+* Массив `actions` маппится в красивые бейджи (Pill badges).
+* *Логика маппинга цвета (важно!):* * `return_to_author` ➔ `bg-status-danger-bg text-status-danger-text`
+* `continue_process` ➔ `bg-status-success-bg text-status-success-text`
+* `escalate` ➔ `bg-status-warn-bg text-status-warn-text`
+* Остальные ➔ `bg-primary-light text-primary`
+
+
+* Выводить человекочитаемое название действия (из словаря в п.3), а не технический ID.
+
+
+* **Блок "Результат / Комментарий AI":**
+* Иконка `🤖` + текст из поля `comment` (Курсив, `text-sm text-text-muted`).
+
+
+
+---
+
+## 5. Требования к коду и данным
+
+1. **SSOT Data:** Разработчик должен создать файл `src/data/action_cases.json` и положить туда переданный JSON.
+2. **Типизация:** Создать интерфейс TypeScript `ActionCaseGroup` и `ActionCase` для строгой типизации пропсов компонентов при чтении JSON.
+3. **Состояние:** Использовать локальный стейт `useState` для хранения активного таба (library/cases) и активной группы кейсов в левом меню (по умолчанию открыта первая группа из JSON).
+4. **Анимации:** При переключении групп кейсов в левом меню, карточки в правой колонке должны появляться плавно (использовать `<motion.div>` из Framer Motion: `initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}`).
+
+---
+
+## 6. Definition of Done (Критерии готовности)
+
+* [ ] Пункт меню переименован в «Действия».
+* [ ] Компонент содержит Tabs с двумя вкладками.
+* [ ] Вкладка «Библиотека действий» отрисовывает 7 базовых действий без упоминания слова "Согласование".
+* [ ] Вкладка «Кейсы и практики» успешно парсит и рендерит данные из `action_cases.json`.
+* [ ] Переключение групп кейсов в боковом меню работает корректно и анимировано.
+* [ ] Массив `actions` в JSON конвертируется в цветные бейджи с правильными оттенками (успех - зеленый, возврат - красный, эскалация - желтый).
+* [ ] Верстка не "ломается" на узких экранах (на мобильных сплит-вью перестраивается в колонку: сначала меню групп (горизонтальный скролл), под ним карточки).
+
+
+{
+  "action_cases_library": [
+    {
+      "group_id": "human_error",
+      "group_title": "Защита от «человеческого фактора»",
+      "icon": "🛡️",
+      "description": "Ловим обидные ошибки, невнимательность и усталость сотрудников до того, как документ уйдет наверх.",
+      "cases": [
+        {
+          "title": "Случайная подмена файла",
+          "problem": "В карточку «Договор» инициатор по ошибке прикрепил скан своего паспорта или прошлогоднюю смету.",
+          "setup": "Если [Категория документа] [≠ не равно] [Договор_закупки]",
+          "actions": ["return_to_author"],
+          "comment": "AI моментально возвращает карточку с текстом: «Прикрепленный файл не является договором. Пожалуйста, проверьте вложения»."
+        },
+        {
+          "title": "Слепое копирование шаблона",
+          "problem": "Менеджер скопировал старый договор, но забыл поменять реквизиты или оставил желтые маркеры типа «[ВСТАВИТЬ ИМЯ ДИРЕКТОРА]».",
+          "setup": "Если [Булева проверка: Есть артефакты шаблона] [Да (истина)]",
+          "actions": ["return_to_author"],
+          "comment": "Возврат автору для чистки текста от следов старых контрагентов."
+        },
+        {
+          "title": "Математический коллапс",
+          "problem": "В тексте написано: «Аванс 50%, постоплата 60%» или сумма прописью не бьется с цифрами.",
+          "setup": "Если [Булева проверка: Математика сходится] [Нет (ложь)]",
+          "actions": ["return_to_author"],
+          "comment": "AI не умеет считать сложные балансы, но базовые нестыковки процентов и сумм ловит отлично."
+        },
+        {
+          "title": "Синдром «Забыл прикрепить»",
+          "problem": "В тексте письма есть фраза «направляем вам акты в Приложении 1», а самого приложения в карточке 1С нет.",
+          "setup": "Если [Булева проверка: Упомянутые приложения отсутствуют] [Да (истина)]",
+          "actions": ["add_comment"],
+          "comment": "Документ не блокируем, но пишем в комментарий: «В тексте заявлены приложения, но они не загружены в систему»."
+        }
+      ]
+    },
+    {
+      "group_id": "legal_security",
+      "group_title": "Юридический и Финансовый радар",
+      "icon": "⚖️",
+      "description": "Глубокий анализ смыслов, поиск скрытых комиссий, кабальных условий и нарушения политик.",
+      "cases": [
+        {
+          "title": "Скрытые кабальные пени",
+          "problem": "Контрагент спрятал мелким шрифтом штраф 1% в день за просрочку вместо стандартных 0.1%.",
+          "setup": "Если [Критичность] [> больше] [7]",
+          "actions": ["escalate", "add_comment"],
+          "comment": "Эскалация на Старшего юриста с выжимкой: «Внимание: пени превышают лимит в 10 раз»."
+        },
+        {
+          "title": "Неправильная подсудность",
+          "problem": "Вместо «Арбитражный суд Свердловской области» контрагент прописал суд в Москве. Ездить туда на заседания — дорого.",
+          "setup": "Если [Булева проверка: Подсудность локальная] [Нет (ложь)]",
+          "actions": ["return_to_author"],
+          "comment": "Инициатор получает задачу согласовать протокол разногласий по подсудности."
+        },
+        {
+          "title": "Устаревшие ГОСТы и СНиПы",
+          "problem": "В техзадании (ТЗ) подрядчик ссылается на строительные нормы, которые отменены 5 лет назад.",
+          "setup": "Если [Тип риска] [= равно] [Технический]",
+          "actions": ["escalate"],
+          "comment": "ТЗ уходит Главному инженеру с подсвеченными неактуальными нормами."
+        },
+        {
+          "title": "Валютные риски",
+          "problem": "Договор составлен в условных единицах или с привязкой к курсу ЦБ, что запрещено фин. политикой компании.",
+          "setup": "Если [Булева проверка: Договор в рублях без привязки к валюте] [Нет (ложь)]",
+          "actions": ["start_subprocess"],
+          "comment": "Параллельно запускается процесс «Валютный контроль» для Финдиректора."
+        }
+      ]
+    },
+    {
+      "group_id": "smart_routing",
+      "group_title": "Умная маршрутизация (Fast-Track)",
+      "icon": "🏎️",
+      "description": "Снятие нагрузки с экспертов. Безопасные документы пролетают со скоростью света.",
+      "cases": [
+        {
+          "title": "Зеленый коридор для типовых договоров",
+          "problem": "Юристы тратят 30% времени на чтение абсолютно стандартных, безрисковых договоров.",
+          "setup": "Если [Критичность] [= равно] [0] И [Кол-во нарушений] [= равно] [0]",
+          "actions": ["continue_process", "set_field"],
+          "comment": "AI пропускает этап юриста. В поле «Статус ИИ» ставится тег «Типовой, рисков 0»."
+        },
+        {
+          "title": "Умный диспетчер входящей почты",
+          "problem": "На общий ящик или в канцелярию падает 500 писем в день. Секретарь сортирует их вручную.",
+          "setup": "Если [Категория документа] [= равно] [Претензия]",
+          "actions": ["start_subprocess", "set_field"],
+          "comment": "Письмо автоматически тегируется и улетает в департамент претензионной работы."
+        },
+        {
+          "title": "Защита от нечитаемых сканов",
+          "problem": "Пользователь загрузил фото договора, снятое на тапок в темной комнате. Юрист ломает глаза.",
+          "setup": "Если [Уверенность AI] [< меньше] [0.5]",
+          "actions": ["return_to_author"],
+          "comment": "Возврат Инициатору: «Документ нечитаем. Загрузите качественный скан (от 300 dpi)»."
+        }
+      ]
+    },
+    {
+      "group_id": "corporate_ethics",
+      "group_title": "Этика, Тон и Коммуникации",
+      "icon": "👔",
+      "description": "Защита репутации компании перед клиентами и госорганами.",
+      "cases": [
+        {
+          "title": "Агрессия в письме клиенту",
+          "problem": "Менеджер сорвался и написал клиенту-должнику слишком резкое, хамское письмо.",
+          "setup": "Если [Тип риска] [= равно] [Репутационный]",
+          "actions": ["return_to_author"],
+          "comment": "Письмо не уйдет адресату. Комментарий AI: «Тон письма нарушает корп. этику. Смягчите формулировки»."
+        },
+        {
+          "title": "Уклонение от ответа регулятору",
+          "problem": "ФАС прислал 3 конкретных вопроса, а исполнитель написал «водянистый» ответ ни о чем.",
+          "setup": "Если [Булева проверка: Даны прямые ответы на все пункты] [Нет (ложь)]",
+          "actions": ["escalate", "add_comment"],
+          "comment": "Передача Начальнику отдела ДО: «Исполнитель не ответил по существу. Риск штрафа от регулятора»."
+        }
+      ]
+    },
+    {
+      "group_id": "data_enrichment",
+      "group_title": "Извлечение данных и Обогащение",
+      "icon": "🪄",
+      "description": "ИИ читает тексты и превращает их в жесткие данные для отчетов 1С.",
+      "cases": [
+        {
+          "title": "Авто-заполнение карточки 1С",
+          "problem": "Сотрудникам лень вручную вбивать сумму, ИНН и сроки действия из Word-файла в поля 1С.",
+          "setup": "Если [Уверенность AI] [> больше] [0.8]",
+          "actions": ["set_field"],
+          "comment": "AI находит в тексте договора сумму (например, 1.5 млн руб) и автоматически прописывает её в поле «Сумма_документа»."
+        },
+        {
+          "title": "Саммаризация для Топ-менеджера (TL;DR)",
+          "problem": "Генеральному директору приносят на подпись 40-страничные талмуды. У него нет времени их читать.",
+          "setup": "Если [Категория документа] [= равно] [Договор_закупки]",
+          "actions": ["add_comment"],
+          "comment": "AI формирует выжимку на 3 строки: «Договор на поставку труб. Сумма: 5 млн. Срок: до 01.12. Рисков не найдено»."
+        }
+      ]
+    },
+    {
+      "group_id": "lateral_thinking",
+      "group_title": "Неочевидные угрозы (Спецназ)",
+      "icon": "🥷",
+      "description": "Паттерны, которые человек физически не способен отследить в потоке.",
+      "cases": [
+        {
+          "title": "Защита коммерческой тайны (DLP)",
+          "problem": "В исходящем письме подрядчику случайно осталась таблица с внутренними паролями, IP-адресами или зарплатами.",
+          "setup": "Если [Булева проверка: Наличие чувствительных данных (пароли/ПДн)] [Да (истина)]",
+          "actions": ["return_to_author", "start_subprocess"],
+          "comment": "Блокировка отправки + тихий запуск подпроцесса «Уведомление Службы ИБ об инциденте»."
+        },
+        {
+          "title": "Нереалистичные SLA (Обещания, которые нельзя выполнить)",
+          "problem": "Менеджер прописал в договоре, что компания обязуется чинить оборудование за 2 часа, хотя реальный срок — 24 часа.",
+          "setup": "Если [Булева проверка: SLA соответствуют производственным возможностям] [Нет (ложь)]",
+          "actions": ["escalate"],
+          "comment": "Договор тормозится и отправляется Техническому директору на оценку рисков неисполнения."
+        },
+        {
+          "title": "Конфликт интересов (Фрод)",
+          "problem": "Юридический адрес нового контрагента совпадает с домашним адресом менеджера по закупкам.",
+          "setup": "Если [Тип риска] [= равно] [Коррупционный]",
+          "actions": ["start_subprocess", "skip_node"],
+          "comment": "Документ идет дальше, чтобы не спугнуть менеджера, но СБ получает сигнал о возможном мошенничестве."
+        }
+      ]
+    }
+  ]
+}
+
+
+
+
+
+
+
+
