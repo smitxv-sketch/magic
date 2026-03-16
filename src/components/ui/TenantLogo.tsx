@@ -24,26 +24,24 @@ export const TenantLogo: React.FC<TenantLogoProps> = ({
   const baseName = configFilename || "logo";
 
   // Очередь путей для проверки
-  const pathsToTry =
-    isExternalUrl && config?.logo
-      ? [config.logo]
-      : [
-          // Сначала ищем в папке текущего тенанта с разными расширениями
-          `/tenants/${currentTenantId}/images/${baseName}.svg`,
-          `/tenants/${currentTenantId}/images/${baseName}.png`,
-          `/tenants/${currentTenantId}/images/${baseName}.jpg`,
-          // Если не нашли, ищем стандартное имя logo.* у текущего тенанта
-          `/tenants/${currentTenantId}/images/logo.svg`,
-          `/tenants/${currentTenantId}/images/logo.png`,
-          `/tenants/${currentTenantId}/images/logo.jpg`,
-          // Если не нашли, ищем в папке дефолтного тенанта
-          `/tenants/default/images/${baseName}.svg`,
-          `/tenants/default/images/${baseName}.png`,
-          `/tenants/default/images/${baseName}.jpg`,
-          `/tenants/default/images/logo.svg`,
-          `/tenants/default/images/logo.png`,
-          `/tenants/default/images/logo.jpg`,
-        ];
+  const pathsToTry = [
+    ...(isExternalUrl && config?.logo ? [config.logo] : []),
+    // Сначала ищем в папке текущего тенанта с разными расширениями
+    `/tenants/${currentTenantId}/images/${baseName}.svg`,
+    `/tenants/${currentTenantId}/images/${baseName}.png`,
+    `/tenants/${currentTenantId}/images/${baseName}.jpg`,
+    // Если не нашли, ищем стандартное имя logo.* у текущего тенанта
+    `/tenants/${currentTenantId}/images/logo.svg`,
+    `/tenants/${currentTenantId}/images/logo.png`,
+    `/tenants/${currentTenantId}/images/logo.jpg`,
+    // Если не нашли, ищем в папке дефолтного тенанта
+    `/tenants/default/images/${baseName}.svg`,
+    `/tenants/default/images/${baseName}.png`,
+    `/tenants/default/images/${baseName}.jpg`,
+    `/tenants/default/images/logo.svg`,
+    `/tenants/default/images/logo.png`,
+    `/tenants/default/images/logo.jpg`,
+  ];
 
   useEffect(() => {
     setAttemptIndex(0);
